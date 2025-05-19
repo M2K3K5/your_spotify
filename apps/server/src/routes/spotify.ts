@@ -17,6 +17,7 @@ import {
   getBest,
   ItemType,
   getBestOfHour,
+  storeInUser,
 } from "../database";
 import {
   CollaborativeMode,
@@ -351,6 +352,123 @@ router.get("/top/sessions", isLoggedOrGuest, async (req, res) => {
     end,
   );
   res.status(200).send(result);
+});
+
+const booleanSchema = z.object({
+  status: z.boolean()
+});
+
+router.post(
+  "/sync-liked-songs",
+  logged,
+  withHttpClient,
+  async (req, res) => {
+    const { client, user } = req as LoggedRequest & SpotifyRequest;
+    const { status } = validate(req.query, booleanSchema);
+    logger.info(`[${user.username}]: Sync liked songs status: ${status}, current status: ${user.syncLikedSongsStatus}, current playlist id: ${user.syncLikedSongsPlaylistId}`);
+
+    if (status) {
+      try {
+        await storeInUser("_id", user._id, { syncLikedSongsStatus: "active" });
+        user.syncLikedSongsStatus = "active";
+
+        try {
+          let allPlaylists = await client.playlists();
+          if (!user.syncLikedSongsPlaylistId || !allPlaylists.some(playlist => playlist.id === user.syncLikedSongsPlaylistId)) {
+            user.syncLikedSongsPlaylistId = await client.createSyncLikedSongsPlaylist(user.username);
+            await storeInUser("_id", user._id, { syncLikedSongsPlaylistId: user.syncLikedSongsPlaylistId });
+            logger.info(`Created new playlist with ID ${user.syncLikedSongsPlaylistId}`);
+          }
+          client.syncLikedTracks(user);
+        } catch (error) {
+          logger.error("spotifyApi.ts syncLikedTracks() playlist fetch error: ", error);
+          if (error.message.includes('not found')) {
+            logger.info(`Playlist with ID ${user.syncLikedSongsPlaylistId} not found. Creating a new playlist...`);
+            user.syncLikedSongsPlaylistId = await client.createSyncLikedSongsPlaylist(user.username);
+            logger.info(`Created new playlist with ID ${user.syncLikedSongsPlaylistId}`);
+            await storeInUser("_id", user._id, { syncLikedSongsPlaylistId: user.syncLikedSongsPlaylistId });
+          } else {
+            throw error;
+          }
+        }
+
+        res.status(200).json({ success: true, playlistId: user.syncLikedSongsPlaylistId });
+      } catch (e) {
+        logger.error(e);
+        await storeInUser("_id", user._id, { syncLikedSongsStatus: "failed" });
+        res.status(500).json({ success: false, error: e.message });
+        return;
+      }
+    } else {
+      await storeInUser("_id", user._id, { syncLikedSongsStatus: "inactive" });
+      res.status(200).json({ success: true });
+      return;
+    }
+  }
+);
+
+router.get(
+  "/sync-liked-songs-status",
+  logged,
+  withHttpClient,
+  async (req, res) => {
+    const { user } = req as LoggedRequest & SpotifyRequest;
+
+    try {
+      if (user.syncLikedSongsStatus === "inactive") {
+        res.status(400).json({ 
+          success: false, 
+          status: user.syncLikedSongsStatus, 
+          error: "Sync disabled" 
+        });
+        return;
+      } 
+      else if (!user.syncLikedSongsPlaylistId && (user.syncLikedSongsStatus === "active" || user.syncLikedSongsStatus === "loading")) {
+        res.status(400).json({ 
+          success: false, 
+          status: user.syncLikedSongsStatus, 
+          error: "Sync failed, no playlist id found" 
+        });
+        return;
+      } else if (user.syncLikedSongsStatus === "failed") {
+        res.status(500).json({ 
+          success: false, 
+          status: user.syncLikedSongsStatus, 
+          error: "Sync failed" 
+        });
+        return;
+      }
+
+      res.status(200).send({ 
+        success: true, 
+        status: user.syncLikedSongsStatus 
+      });
+      return;
+    } catch (e) {
+      logger.error(e);
+      res.status(500).json({ 
+        success: false, 
+        status: user.syncLikedSongsStatus, 
+        error: e.message 
+      });
+      return;
+    }
+  }
+)
+
+const playlistSchema = z.object({
+  playlistId: z.string(),
+});
+
+router.get("/playlist",
+  logged,
+  withHttpClient,
+  async (req, res) => {
+    const { client } = req as LoggedRequest & SpotifyRequest;
+    const { playlistId } = validate(req.query, playlistSchema);
+
+    const playlist = await client.getPlaylist(playlistId);
+    res.status(200).send(playlist);
 });
 
 router.get("/playlists", logged, withHttpClient, async (req, res) => {

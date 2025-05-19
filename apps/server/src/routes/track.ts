@@ -22,7 +22,8 @@ const getTracksSchema = z.object({
 
 router.get("/:ids", isLoggedOrGuest, async (req, res) => {
   const { ids } = validate(req.params, getTracksSchema);
-  const tracks = await getTracks(ids.split(","));
+  const { user } = req as LoggedRequest;
+  const tracks = await getTracks(user._id.toString(), ids.split(","));
   if (!tracks || tracks.length === 0) {
     res.status(404).end();
     return;
@@ -37,16 +38,16 @@ const getTrackStats = z.object({
 router.get("/:id/stats", isLoggedOrGuest, async (req, res) => {
   const { user } = req as LoggedRequest;
   const { id } = validate(req.params, getTrackStats);
-  const [track] = await getTracks([id]);
+  const [track] = await getTracks(user._id.toString(), [id]);
   const [trackArtist] = track?.artists ?? [];
   if (!track || !trackArtist) {
     res.status(404).end();
     return;
   }
   const promises = [
-    getAlbums([track.album]),
+    getAlbums(user._id.toString(), [track.album]),
     getTrackListenedCount(user, id),
-    getArtists([trackArtist]),
+    getArtists(user._id.toString(), [trackArtist]),
     getTrackFirstAndLastListened(user, track.id),
     bestPeriodOfTrack(user, track.id),
     getTrackRecentHistory(user, track.id),
@@ -74,7 +75,7 @@ router.get("/:id/rank", isLoggedOrGuest, async (req, res) => {
   const { user } = req as LoggedRequest;
   const { id } = validate(req.params, getTrackStats);
 
-  const [track] = await getTracks([id]);
+  const [track] = await getTracks(user._id.toString(), [id]);
   if (!track) {
     res.status(404).end();
     return;

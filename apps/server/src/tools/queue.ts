@@ -1,4 +1,5 @@
 import { wait } from "./misc";
+import { retryPromise } from "./misc";
 
 interface QueueItem<T> {
   fn: () => Promise<T>;
@@ -16,7 +17,7 @@ export class PromiseQueue {
         continue;
       }
       try {
-        const data = await item.fn();
+        const data = await retryPromise(item.fn, 3, 10);
         item.onResolve(data);
       } catch (e) {
         item.onError(e);
