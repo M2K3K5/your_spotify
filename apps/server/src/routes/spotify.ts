@@ -364,7 +364,7 @@ router.post(
   withHttpClient,
   async (req, res) => {
     const { client, user } = req as LoggedRequest & SpotifyRequest;
-    const { status } = validate(req.query, booleanSchema);
+    const { status } = validate(req.body, booleanSchema);
     logger.info(`[${user.username}]: Sync liked songs status: ${status}, current status: ${user.syncLikedSongsStatus}, current playlist id: ${user.syncLikedSongsPlaylistId}`);
 
     if (status) {
