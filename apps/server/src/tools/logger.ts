@@ -14,11 +14,15 @@ export function LogLevelAccepts(wantedLogLevel: LogLevel) {
 
 export const logger = {
   debug: (...args: any) =>
-    LogLevelToNumber[logLevel] <= 0 && console.log("[debug] ", ...args),
+    LogLevelToNumber[logLevel] <= 0 &&
+    console.log(`[debug] [${new Date().toISOString()}]`, ...args),
   info: (...args: any) =>
-    LogLevelToNumber[logLevel] <= 1 && console.log("[info] ", ...args),
+    LogLevelToNumber[logLevel] <= 1 &&
+    console.log(`[info] [${new Date().toISOString()}]`, ...args),
   warn: (...args: any) =>
-    LogLevelToNumber[logLevel] <= 2 && console.warn("[warn] ", ...args),
+    LogLevelToNumber[logLevel] <= 2 &&
+    console.warn(`[warn] [${new Date().toISOString()}]`, ...args),
   error: (...args: any) =>
-    LogLevelToNumber[logLevel] <= 3 && console.error("[error] ", ...args),
+    LogLevelToNumber[logLevel] <= 3 &&
+    console.error(`[error] [${new Date().toISOString()}]`, ...args),
 };
