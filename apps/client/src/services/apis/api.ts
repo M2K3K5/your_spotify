@@ -19,11 +19,14 @@ import {
   UnboxPromise,
   TrackWithFullAlbum,
 } from "../types";
+import qs from "qs";
 
 const axios = Axios.create({
   /* @ts-ignore-next-line */
   baseURL: window.API_ENDPOINT,
   withCredentials: true,
+  paramsSerializer: params =>
+    qs.stringify(params, { arrayFormat: 'repeat' }), // `?otherIds=a&otherIds=b`
 });
 
 // Add a response interceptor

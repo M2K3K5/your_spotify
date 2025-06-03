@@ -241,7 +241,10 @@ router.get("/top/albums", isLoggedOrGuest, async (req, res) => {
 
 const collaborativeSchema = intervalPerSchema.merge(
   z.object({
-    otherIds: z.array(z.string()).min(1),
+     otherIds: z.preprocess(
+      (val) => (typeof val === 'string' ? [val] : val), // If it's a string, wrap it in an array
+      z.array(z.string()).min(1)
+    ),
     mode: z.nativeEnum(CollaborativeMode),
   }),
 );
