@@ -13,12 +13,12 @@ export default function PlaylistEdit() {
   const user = useSelector(selectUser);
   const playlists = useAPI(api.getPlaylists);
   const [selected, setSelected] = useState('');
-  const [removed, setRemoved] = useState<number | null>(null);
+  const [success, setSuccess] = useState<boolean | null>(null);
 
   const remove = useCallback(async () => {
     if (!selected) return;
     const { data } = await api.removeLikedSongsFromPlaylist(selected);
-    setRemoved(data.removedSongs);
+    setSuccess(data.success);
   }, [selected]);
 
   if (!user) {
@@ -46,8 +46,8 @@ export default function PlaylistEdit() {
         <Button variant="contained" disabled={!selected} onClick={remove}>
           Remove liked songs
         </Button>
-        {removed !== null && (
-          <Text element="div">Removed {removed} songs</Text>
+        {success !== null && (
+          <Text element="div">Success: {success}</Text>
         )}
       </div>
     </div>

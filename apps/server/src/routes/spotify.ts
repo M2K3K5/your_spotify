@@ -590,16 +590,8 @@ router.post("/playlist/remove-likedsongs", logged, withHttpClient, async (req, r
   const { playlistId } = validate(req.body, removeLikedSchema);
 
   const likedTracks = await client.getUsersSavedTracks();
-  const playlistTracks = await client.getPlaylistTracks(playlistId);
+  const likedIds = likedTracks.map(t => t.track.id);
+  await client.removePlaylistTracks(playlistId, likedIds);
 
-  const likedIds = new Set(likedTracks.map(t => t.track.id));
-  const toRemove = playlistTracks
-    .map(t => t.track.id)
-    .filter(id => likedIds.has(id));
-
-  if (toRemove.length > 0) {
-    await client.removePlaylistTracks(playlistId, toRemove);
-  }
-
-  res.status(200).send({ removedSongs: toRemove.length });
+  res.status(200).send();
 });

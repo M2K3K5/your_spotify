@@ -222,13 +222,13 @@ export const syncLikedSongsStatus = myAsyncThunk<SyncLikedSongsStatusResponse, v
   },
 );
 
-export const removeLikedSongs = myAsyncThunk<number, string>(
+export const removeLikedSongs = myAsyncThunk<boolean, string>(
   "@user/remove-likedsongs",
   async (playlistId, tapi) => {
     try {
       const resp = await api.removeLikedSongsFromPlaylist(playlistId);
       await tapi.dispatch(checkLogged());
-      return resp.data.removedSongs;
+      return true;
     } catch (e) {
       console.error(e);
       tapi.dispatch(
@@ -237,7 +237,7 @@ export const removeLikedSongs = myAsyncThunk<number, string>(
           message: "Could not remove liked songs",
         }),
       );
-      return 0;
+      return false;
     }
   },
 );
