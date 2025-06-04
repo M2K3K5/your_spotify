@@ -241,7 +241,7 @@ router.get("/top/albums", isLoggedOrGuest, async (req, res) => {
 
 const collaborativeSchema = intervalPerSchema.merge(
   z.object({
-     otherIds: z.preprocess(
+    otherIds: z.preprocess(
       (val) => (typeof val === 'string' ? [val] : val), // If it's a string, wrap it in an array
       z.array(z.string()).min(1)
     ),
@@ -419,40 +419,40 @@ router.get(
 
     try {
       if (user.syncLikedSongsStatus === "inactive") {
-        res.status(400).json({ 
-          success: false, 
-          status: user.syncLikedSongsStatus, 
-          error: "Sync disabled" 
+        res.status(400).json({
+          success: false,
+          status: user.syncLikedSongsStatus,
+          error: "Sync disabled"
         });
         return;
-      } 
+      }
       else if (!user.syncLikedSongsPlaylistId && (user.syncLikedSongsStatus === "active" || user.syncLikedSongsStatus === "loading")) {
-        res.status(400).json({ 
-          success: false, 
-          status: user.syncLikedSongsStatus, 
-          error: "Sync failed, no playlist id found" 
+        res.status(400).json({
+          success: false,
+          status: user.syncLikedSongsStatus,
+          error: "Sync failed, no playlist id found"
         });
         return;
       } else if (user.syncLikedSongsStatus === "failed") {
-        res.status(500).json({ 
-          success: false, 
-          status: user.syncLikedSongsStatus, 
-          error: "Sync failed" 
+        res.status(500).json({
+          success: false,
+          status: user.syncLikedSongsStatus,
+          error: "Sync failed"
         });
         return;
       }
 
-      res.status(200).send({ 
-        success: true, 
-        status: user.syncLikedSongsStatus 
+      res.status(200).send({
+        success: true,
+        status: user.syncLikedSongsStatus
       });
       return;
     } catch (e) {
       logger.error(e);
-      res.status(500).json({ 
-        success: false, 
-        status: user.syncLikedSongsStatus, 
-        error: e.message 
+      res.status(500).json({
+        success: false,
+        status: user.syncLikedSongsStatus,
+        error: e.message
       });
       return;
     }
@@ -472,7 +472,7 @@ router.get("/playlist",
 
     const playlist = await client.getPlaylist(playlistId);
     res.status(200).send(playlist);
-});
+  });
 
 router.get("/playlists", logged, withHttpClient, async (req, res) => {
   const { client, user } = req as LoggedRequest & SpotifyRequest;
@@ -579,4 +579,27 @@ router.post("/playlist/create", logged, withHttpClient, async (req, res) => {
     await client.createPlaylist(playlistName, spotifyIds);
   }
   res.status(204).end();
+});
+
+const removeLikedSchema = z.object({
+  playlistId: z.string(),
+});
+
+router.post("/playlist/remove-liked", logged, withHttpClient, async (req, res) => {
+  const { client } = req as LoggedRequest & SpotifyRequest;
+  const { playlistId } = validate(req.body, removeLikedSchema);
+
+  const likedTracks = await client.getUsersSavedTracks();
+  const playlistTracks = await client.getPlaylistTracks(playlistId);
+
+  const likedIds = new Set(likedTracks.map(t => t.track.id));
+  const toRemove = playlistTracks
+    .map(t => t.track.id)
+    .filter(id => likedIds.has(id));
+
+  if (toRemove.length > 0) {
+    await client.removePlaylistTracks(playlistId, toRemove);
+  }
+
+  res.status(200).send({ removed: toRemove.length });
 });
