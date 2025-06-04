@@ -221,3 +221,23 @@ export const syncLikedSongsStatus = myAsyncThunk<SyncLikedSongsStatusResponse, v
     }
   },
 );
+
+export const removeLikedSongs = myAsyncThunk<number, string>(
+  "@user/remove-likedsongs",
+  async (playlistId, tapi) => {
+    try {
+      const resp = await api.removeLikedSongsFromPlaylist(playlistId);
+      await tapi.dispatch(checkLogged());
+      return resp.data.removedSongs;
+    } catch (e) {
+      console.error(e);
+      tapi.dispatch(
+        alertMessage({
+          level: "error",
+          message: "Could not remove liked songs",
+        }),
+      );
+      return 0;
+    }
+  },
+);

@@ -585,7 +585,7 @@ const removeLikedSchema = z.object({
   playlistId: z.string(),
 });
 
-router.post("/playlist/remove-liked", logged, withHttpClient, async (req, res) => {
+router.post("/playlist/remove-likedsongs", logged, withHttpClient, async (req, res) => {
   const { client } = req as LoggedRequest & SpotifyRequest;
   const { playlistId } = validate(req.body, removeLikedSchema);
 
@@ -601,5 +601,5 @@ router.post("/playlist/remove-liked", logged, withHttpClient, async (req, res) =
     await client.removePlaylistTracks(playlistId, toRemove);
   }
 
-  res.status(200).send({ removed: toRemove.length });
+  res.status(200).send({ removedSongs: toRemove.length });
 });

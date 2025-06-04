@@ -17,8 +17,8 @@ export default function PlaylistEdit() {
 
   const remove = useCallback(async () => {
     if (!selected) return;
-    const { data } = await api.removeLikedFromPlaylist(selected);
-    setRemoved(data.removed);
+    const { data } = await api.removeLikedSongsFromPlaylist(selected);
+    setRemoved(data.removedSongs);
   }, [selected]);
 
   if (!user) {
