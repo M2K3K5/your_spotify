@@ -47,7 +47,7 @@ export default function PlaylistEdit() {
           Remove liked songs
         </Button>
         {success !== null && (
-          <Text element="div">Success: {success}</Text>
+          <Text element="div">Success: {success.toString()}</Text>
         )}
       </div>
     </div>
