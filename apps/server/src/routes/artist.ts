@@ -26,8 +26,9 @@ const getArtistsSchema = z.object({
 });
 
 router.get("/:ids", isLoggedOrGuest, async (req, res) => {
+  const { user } = req as LoggedRequest;
   const { ids } = validate(req.params, getArtistsSchema);
-  const artists = await getArtists(ids.split(","));
+  const artists = await getArtists(user._id.toString(), ids.split(","));
   if (!artists || artists.length === 0) {
     res.status(404).end();
     return;
@@ -43,7 +44,7 @@ router.get("/:id/stats", isLoggedOrGuest, async (req, res) => {
   const { user } = req as LoggedRequest;
   const { id } = validate(req.params, getArtistStats);
 
-  const [artist] = await getArtists([id]);
+  const [artist] = await getArtists(user._id.toString(), [id]);
   if (!artist) {
     res.status(404).end();
     return;
@@ -85,7 +86,7 @@ router.get("/:id/rank", isLoggedOrGuest, async (req, res) => {
   const { user } = req as LoggedRequest;
   const { id } = validate(req.params, getArtistStats);
 
-  const [artist] = await getArtists([id]);
+  const [artist] = await getArtists(user._id.toString(), [id]);
   if (!artist) {
     res.status(404).end();
     return;

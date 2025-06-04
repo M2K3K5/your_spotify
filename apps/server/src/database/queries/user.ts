@@ -54,6 +54,8 @@ export const createUser = (
       metricUsed: "number",
       dateFormat: "default",
     },
+    syncLikedSongsPlaylistId: null,
+    syncLikedSongsStatus: "inactive",
   });
 
 export const storeInUser = <F extends keyof User>(
@@ -244,7 +246,13 @@ export const getSongs = async (
   if (!fullUser) {
     return [];
   }
-  return fullUser.tracks;
+
+  // Filter out invalid tracks
+  const validTracks = fullUser.tracks.filter((track: any) => {
+    return track.track.full_album !== null && track.track.full_artist.length > 0;
+  });
+
+  return validTracks;
 };
 
 export const getUserCount = () => UserModel.countDocuments();

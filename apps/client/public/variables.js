@@ -1,1 +1,1 @@
-window.API_ENDPOINT = 'http://localhost:8080';
+window.API_ENDPOINT = 'https://api-music.lueders.dev';

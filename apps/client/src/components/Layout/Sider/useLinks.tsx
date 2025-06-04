@@ -16,6 +16,8 @@ import {
   ShareOutlined,
   Speed,
   SpeedOutlined,
+  OfflineShare,
+  OfflineShareOutlined,
 } from "@mui/icons-material";
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
@@ -75,20 +77,27 @@ export function useLinks() {
             },
           ],
         },
-        affinityEnabled
-          ? {
-              label: "With people",
-              items: [
-                {
-                  label: "Affinity",
-                  link: "/collaborative/affinity",
-                  icon: <MusicNoteOutlined />,
-                  iconOn: <MusicNote />,
-                  restrict: "guest",
-                },
-              ],
-            }
-          : undefined,
+        {
+          label: "Social",
+          items: compact([
+            affinityEnabled
+            ? {
+                    label: "Affinity",
+                    link: "/collaborative/affinity",
+                    icon: <MusicNoteOutlined />,
+                    iconOn: <MusicNote />,
+                    restrict: "guest",
+              }
+            : undefined,
+            {
+              label: "Share liked songs",
+              link: "/collaborative/liked-songs",
+              icon: <OfflineShareOutlined />,
+              iconOn: <OfflineShare />,
+              restrict: "guest",
+            },
+          ]),
+        },
         {
           label: "Settings",
           items: [
