@@ -26,7 +26,7 @@ const axios = Axios.create({
   baseURL: window.API_ENDPOINT,
   withCredentials: true,
   paramsSerializer: params =>
-    qs.stringify(params, { arrayFormat: 'repeat' }), // `?otherIds=a&otherIds=b`
+    qs.stringify(params, { arrayFormat: 'repeat', skipNulls: true }), // `?otherIds=a&otherIds=b`
 });
 
 // Add a response interceptor
