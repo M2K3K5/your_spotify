@@ -580,3 +580,26 @@ router.post("/playlist/create", logged, withHttpClient, async (req, res) => {
   }
   res.status(204).end();
 });
+
+const removeLikedSchema = z.object({
+  playlistId: z.string(),
+});
+
+router.post("/playlist/remove-liked", logged, withHttpClient, async (req, res) => {
+  const { client } = req as LoggedRequest & SpotifyRequest;
+  const { playlistId } = validate(req.body, removeLikedSchema);
+
+  const likedTracks = await client.getUsersSavedTracks();
+  const playlistTracks = await client.getPlaylistTracks(playlistId);
+
+  const likedIds = new Set(likedTracks.map(t => t.track.id));
+  const toRemove = playlistTracks
+    .map(t => t.track.id)
+    .filter(id => likedIds.has(id));
+
+  if (toRemove.length > 0) {
+    await client.removePlaylistTracks(playlistId, toRemove);
+  }
+
+  res.status(200).send({ removed: toRemove.length });
+});

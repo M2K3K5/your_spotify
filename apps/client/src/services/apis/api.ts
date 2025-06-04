@@ -534,6 +534,8 @@ export const api = {
     name: string | undefined,
     context: PlaylistContext,
   ) => post("/spotify/playlist/create", { playlistId: id, name, ...context }),
+  removeLikedFromPlaylist: (playlistId: string) =>
+    post<{ removed: number }>("/spotify/playlist/remove-liked", { playlistId }),
   getTrackDetails: (ids: string[]) => get<Track[]>(`/track/${ids.join(",")}`),
   getTrackStats: (id: string) =>
     get<TrackStatsResponse | { code: "NEVER_LISTENED" }>(`/track/${id}/stats`),

@@ -18,6 +18,8 @@ import {
   SpeedOutlined,
   OfflineShare,
   OfflineShareOutlined,
+  Edit,
+  EditOutlined,
 } from "@mui/icons-material";
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
@@ -97,6 +99,17 @@ export function useLinks() {
               restrict: "guest",
             },
           ]),
+        },
+        {
+          label: "Tools",
+          items: [
+            {
+              label: "Playlists edit",
+              link: "/tools/playlists-edit",
+              icon: <EditOutlined />,
+              iconOn: <Edit />,
+            },
+          ],
         },
         {
           label: "Settings",

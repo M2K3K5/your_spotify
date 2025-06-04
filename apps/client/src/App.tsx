@@ -31,6 +31,7 @@ import LongestSessions from "./scenes/LongestSessions";
 import AlbumStats from "./scenes/AlbumStats";
 import Benchmarks from "./scenes/Benchmarks";
 import ApiEndpointSetToFronted from "./scenes/Error/ApiEndpointSetToFronted";
+import PlaylistEdit from "./scenes/Tools/PlaylistEdit";
 
 function App() {
   const dark = useSelector(selectDarkMode);
@@ -184,15 +185,23 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route
-                path="/benchmarks"
-                element={
-                  <PrivateRoute>
-                    <Benchmarks />
-                  </PrivateRoute>
-                }
-              />
-            </Routes>
+                <Route
+                  path="/benchmarks"
+                  element={
+                    <PrivateRoute>
+                      <Benchmarks />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/tools/playlists-edit"
+                  element={
+                    <PrivateRoute>
+                      <PlaylistEdit />
+                    </PrivateRoute>
+                  }
+                />
+              </Routes>
           </Layout>
         </BrowserRouter>
       </div>
