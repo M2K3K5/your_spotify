@@ -228,7 +228,7 @@ export const removeLikedSongs = myAsyncThunk<boolean, string>(
     try {
       const resp = await api.removeLikedSongsFromPlaylist(playlistId);
       await tapi.dispatch(checkLogged());
-      return true;
+      return resp.data.success;
     } catch (e) {
       console.error(e);
       tapi.dispatch(

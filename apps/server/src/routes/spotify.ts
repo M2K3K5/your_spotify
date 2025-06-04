@@ -593,5 +593,7 @@ router.post("/playlist/remove-likedsongs", logged, withHttpClient, async (req, r
   const likedIds = likedTracks.map(t => t.track.id);
   await client.removePlaylistTracks(playlistId, likedIds);
 
-  res.status(200).send();
+  res.status(200).json({
+    success: true
+  });
 });
