@@ -431,8 +431,8 @@ export class SpotifyAPI {
 
       if (changes.length > 0) {
         await createBackup(user._id.toString(), changes);
-        await deleteOldBackups(user._id.toString(), 30); // TODO: implement 30 days deletion
       }
+      await deleteOldBackups(user._id.toString(), 30);
     } catch (e) {
       logger.error(e);
     }
