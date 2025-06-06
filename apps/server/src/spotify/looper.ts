@@ -120,6 +120,10 @@ export const dbLoop = async () => {
             const spotifyApi = new SpotifyAPI(user._id.toString());
             await spotifyApi.syncLikedTracks(user);
           }
+          if (user.likedSongsBackupStatus != 'inactive' && isSyncTime) {
+            const spotifyApi = new SpotifyAPI(user._id.toString());
+            await spotifyApi.backupLikedSongs(user);
+          }
         }
       }
 
