@@ -60,7 +60,7 @@ export default function LikedSongsBackup() {
             value={selectedVersionId}
             onChange={ev => setSelectedVersionId(ev.target.value)}
           >
-            {backupVersions?.map(version => (
+            {backupVersions?.slice().reverse().map(version => (
               <MenuItem key={version.id} value={version.id}>
                 {new Date(version.date).toLocaleDateString()}
               </MenuItem>

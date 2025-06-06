@@ -6,7 +6,7 @@ export const createBackup = (userId: string, changes: LikedSongsChange[]) =>
   LikedSongsBackupModel.create({ owner: new Types.ObjectId(userId), changes });
 
 export const getBackups = (userId: string) =>
-  LikedSongsBackupModel.find({ owner: userId }).sort({ createdAt: -1 });
+  LikedSongsBackupModel.find({ owner: userId }).sort({ createdAt: 1 });
 
 export const getBackupsUntil = (userId: string, until: Date) =>
   LikedSongsBackupModel.find({
