@@ -1,5 +1,7 @@
 import { api } from "../../../apis/api";
 import { myAsyncThunk } from "../../tools";
+import { alertMessage } from "../message/reducer";
+import { checkLogged } from "../user/thunk";
 import { Playlist, PlaylistContext } from "./types";
 
 export const fetchPlaylists = myAsyncThunk<Playlist[] | null, void>(
@@ -35,26 +37,42 @@ export const addToPlaylist = myAsyncThunk<void, AddToPlaylistPayload>(
   },
 );
 
-export const backupLikedSongs = myAsyncThunk<void, boolean>(
+export const backupLikedSongs = myAsyncThunk<boolean, boolean>(
   "@playlist/backup-liked-songs",
   async (enable, tapi) => {
     try {
-      await api.backupLikedSongs(enable);
-      tapi.dispatch(fetchPlaylists());
+      const resp = await api.backupLikedSongs(enable);
+      await tapi.dispatch(checkLogged());
+      return resp.data.success;
     } catch (e) {
       console.error(e);
+      tapi.dispatch(
+        alertMessage({
+          level: "error",
+          message: "Could not remove liked songs",
+        }),
+      );
+      return false;
     }
   }
 );
 
-export const restoreLikedSongsBackup = myAsyncThunk<void, string>(
+export const restoreLikedSongsBackup = myAsyncThunk<boolean, string>(
   "@playlist/backup-liked-songs/restore",
   async (versionId, tapi) => {
     try {
-      await api.restoreBackup(versionId);
-      tapi.dispatch(fetchPlaylists());
+      const resp = await api.restoreBackup(versionId);
+      await tapi.dispatch(checkLogged());
+      return resp.data.success;
     } catch (e) {
       console.error(e);
+      tapi.dispatch(
+        alertMessage({
+          level: "error",
+          message: "Could not restore liked songs backup",
+        }),
+      );
+      return false;
     }
   }
 );

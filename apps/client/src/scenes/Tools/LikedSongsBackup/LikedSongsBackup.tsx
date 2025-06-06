@@ -5,7 +5,7 @@ import {
   MenuItem,
   Select,
 } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import Header from '../../../components/Header';
 import Text from '../../../components/Text';
@@ -16,21 +16,31 @@ import s from './index.module.css';
 
 export default function LikedSongsBackup() {
   const user = useSelector(selectUser);
-  const versions = useAPI(api.getBackupVersions);
-  const [selected, setSelected] = useState('');
-  const [success, setSuccess] = useState<boolean | null>(null);
+  const backupVersions = useAPI(api.getBackupVersions);
+  const [selectedVersionId, setSelectedVersionId] = useState('');
+  const [restoreSuccessMessage, setRestoreSuccessMessage] = useState<boolean | null>(null);
+  const [isBackupEnabled, setIsBackupEnabled] = useState<boolean>(false);
 
-  const restore = useCallback(async () => {
-    if (!selected) return;
-    await api.restoreBackup(selected);
-    setSuccess(true);
-  }, [selected]);
+  useEffect(() => {
+    setIsBackupEnabled(user?.likedSongsBackupStatus === 'active');
+  }, [user?.likedSongsBackupStatus]);
 
-  const toggle = useCallback(async () => {
-    const enable = user?.likedSongsBackupStatus !== 'active';
-    await api.backupLikedSongs(enable);
-    setSuccess(null);
-  }, [user]);
+  const restoreFromBackup = useCallback(async () => {
+    if (!selectedVersionId) return;
+
+    const response = await api.restoreBackup(selectedVersionId);
+    setRestoreSuccessMessage(response.data.success);
+  }, [selectedVersionId]);
+
+  const toggleBackup = useCallback(async () => {
+    const shouldEnable = !isBackupEnabled;
+    const response = await api.backupLikedSongs(shouldEnable);
+
+    if (response.data.success) {
+      setIsBackupEnabled(shouldEnable);
+    }
+    setRestoreSuccessMessage(null);
+  }, [isBackupEnabled]);
 
   if (!user) return null;
 
@@ -38,28 +48,37 @@ export default function LikedSongsBackup() {
     <div>
       <Header title="Liked songs backup" subtitle="Restore your liked songs" />
       <div className={s.content}>
-        <Button variant="contained" onClick={toggle}>
-          {user.likedSongsBackupStatus === 'active' ? 'Disable' : 'Enable'}
+        <Button variant="contained" onClick={toggleBackup}>
+          {isBackupEnabled ? 'Disable Backup' : 'Enable Backup'}
         </Button>
+
         <FormControl fullWidth>
-          <InputLabel id="version">Select a backup</InputLabel>
+          <InputLabel id="version-select">Select a backup</InputLabel>
           <Select
-            labelId="version"
+            labelId="version-select"
             label="Select a backup"
-            value={selected}
-            onChange={ev => setSelected(ev.target.value)}
+            value={selectedVersionId}
+            onChange={ev => setSelectedVersionId(ev.target.value)}
           >
-            {versions?.map(v => (
-              <MenuItem key={v.id} value={v.id}>
-                {new Date(v.date).toLocaleDateString()}
+            {backupVersions?.map(version => (
+              <MenuItem key={version.id} value={version.id}>
+                {new Date(version.date).toLocaleDateString()}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
-        <Button variant="contained" disabled={!selected} onClick={restore}>
-          Restore
+
+        <Button
+          variant="contained"
+          disabled={!selectedVersionId}
+          onClick={restoreFromBackup}
+        >
+          Restore Selected Backup
         </Button>
-        {success && <Text element="div">Restored</Text>}
+
+        {restoreSuccessMessage && (
+          <Text element="div">Backup restored successfully!</Text>
+        )}
       </div>
     </div>
   );
