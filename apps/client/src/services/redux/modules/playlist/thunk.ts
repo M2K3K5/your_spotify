@@ -34,3 +34,40 @@ export const addToPlaylist = myAsyncThunk<void, AddToPlaylistPayload>(
     }
   },
 );
+
+export const backupLikedSongs = myAsyncThunk<void, boolean>(
+  "@playlist/backup-liked-songs",
+  async (enable, tapi) => {
+    try {
+      await api.backupLikedSongs(enable);
+      tapi.dispatch(fetchPlaylists());
+    } catch (e) {
+      console.error(e);
+    }
+  }
+);
+
+export const restoreLikedSongsBackup = myAsyncThunk<void, string>(
+  "@playlist/backup-liked-songs/restore",
+  async (versionId, tapi) => {
+    try {
+      await api.restoreBackup(versionId);
+      tapi.dispatch(fetchPlaylists());
+    } catch (e) {
+      console.error(e);
+    }
+  }
+);
+
+export const fetchLikedSongsBackupVersions = myAsyncThunk<{ id: string; date: string }[] | null, void>(
+  "@playlist/backup-liked-songs/versions",
+  async () => {
+    try {
+      const { data } = await api.getBackupVersions();
+      return data;
+    } catch (e) {
+      console.error(e);
+    }
+    return null;
+  }
+);

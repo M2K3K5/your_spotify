@@ -109,6 +109,12 @@ export function useLinks() {
               icon: <EditOutlined />,
               iconOn: <Edit />,
             },
+            {
+              label: 'Liked songs backup',
+              link: '/tools/liked-songs-backup',
+              icon: <EditOutlined />,
+              iconOn: <Edit />,
+            },
           ],
         },
         {

@@ -8,6 +8,7 @@ import { Spotify } from "../oauth/Provider";
 import { PromiseQueue } from "../queue";
 import { User } from "../../database/schemas/user";
 import { promises as fs } from "fs";
+import { createBackup, deleteOldBackups, getBackupsUntil } from "../../database/queries/likedSongsBackup";
 
 export const squeue = new PromiseQueue();
 
@@ -212,6 +213,26 @@ export class SpotifyAPI {
     }
   }
 
+  async addUsersSavedTracks(ids: string[]): Promise<void> {
+    const chunks = chunk(ids, 50);
+    for (const chunk of chunks) {
+      await squeue.queue(async () => {
+        await this.checkToken();
+        return this.client.put("/me/tracks", { ids: chunk });
+      });
+    }
+  }
+  
+  async removeUsersSavedTracks(ids: string[]): Promise<void> {
+    const chunks = chunk(ids, 50);
+    for (const chunk of chunks) {
+      await squeue.queue(async () => {
+        await this.checkToken();
+        return this.client.delete("/me/tracks", { data: { ids: chunk } });
+      });
+    }
+  }
+
   async updatePlaylistTracks(
     playlist_id: string,
     uris: string[],
@@ -375,6 +396,45 @@ export class SpotifyAPI {
         }
       }
       throw e;
+    }
+  }
+
+  async backupLikedSongs(user: User) {
+    try {
+      const likedSongs = await this.getUsersSavedTracks();
+      const likedIds = likedSongs.map(t => t.track.id);
+      const previousBackups = await getBackupsUntil(
+        user._id.toString(),
+        new Date(),
+      );
+      const currentSet = new Set<string>();
+      for (const backup of previousBackups) {
+        for (const change of backup.changes) {
+          if (change.action === 'add') currentSet.add(change.songId);
+          else currentSet.delete(change.songId);
+        }
+      }
+
+      const toAdd = likedIds.filter(id => !currentSet.has(id));
+      const toRemove = Array.from(currentSet).filter(
+        id => !likedIds.includes(id),
+      );
+
+      if (previousBackups.length === 0 && toAdd.length === 0) {
+        toAdd.push(...likedIds);
+      }
+
+      const changes = [
+        ...toAdd.map(id => ({ songId: id, action: 'add' as const })),
+        ...toRemove.map(id => ({ songId: id, action: 'remove' as const })),
+      ];
+
+      if (changes.length > 0) {
+        await createBackup(user._id.toString(), changes);
+        await deleteOldBackups(user._id.toString(), 30); // TODO: implement 30 days deletion
+      }
+    } catch (e) {
+      logger.error(e);
     }
   }
 }

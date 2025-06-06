@@ -36,6 +36,7 @@ import {
 } from "../tools/middleware";
 import { SpotifyRequest, LoggedRequest, Timesplit } from "../tools/types";
 import { toDate, toNumber } from "../tools/zod";
+import { getBackups, getBackupsUntil } from "../database/queries/likedSongsBackup";
 
 export const router = Router();
 
@@ -597,3 +598,58 @@ router.post("/playlist/remove-likedsongs", logged, withHttpClient, async (req, r
     success: true
   });
 });
+
+router.post('/backup-liked-songs', logged, withHttpClient, async (req, res) => {
+  const { client, user } = req as LoggedRequest & SpotifyRequest;
+  const { status } = validate(req.body, booleanSchema);
+
+  if (status) {
+    await storeInUser('_id', user._id, { likedSongsBackupStatus: 'active' });
+    await client.backupLikedSongs(user);
+    res.status(200).json({ success: true });
+  } else {
+    await storeInUser('_id', user._id, { likedSongsBackupStatus: 'inactive' });
+    res.status(200).json({ success: true });
+  }
+});
+
+router.get('/backup-liked-songs/versions', logged, async (req, res) => {
+  const { user } = req as LoggedRequest;
+  const backups = await getBackups(user._id.toString());
+  res.status(200).send(backups.map(b => ({ id: b._id, date: b.createdAt })));
+});
+
+router.post(
+  '/backup-liked-songs/restore',
+  logged,
+  withHttpClient,
+  async (req, res) => {
+    const { client, user } = req as LoggedRequest & SpotifyRequest;
+    const body = validate(req.body, z.object({ id: z.string() }));
+    const backups = await getBackupsUntil(
+      user._id.toString(),
+      new Date(8640000000000000),
+    );
+    const targetIndex = backups.findIndex(b => b._id.toString() === body.id);
+    if (targetIndex === -1) {
+      res.status(404).end();
+      return;
+    }
+    const relevant = backups.slice(0, targetIndex + 1);
+    const songs = new Set<string>();
+    for (const b of relevant) {
+      for (const c of b.changes) {
+        if (c.action === 'add') songs.add(c.songId);
+        else songs.delete(c.songId);
+      }
+    }
+    const current = await client.getUsersSavedTracks();
+    const currentIds = current.map(t => t.track.id);
+    const toAdd = Array.from(songs).filter(id => !currentIds.includes(id));
+    const toRemove = currentIds.filter(id => !songs.has(id));
+    if (toAdd.length) await client.addUsersSavedTracks(toAdd);
+    if (toRemove.length) await client.removeUsersSavedTracks(toRemove);
+    await client.backupLikedSongs(user);
+    res.status(200).json({ success: true });
+  },
+);
