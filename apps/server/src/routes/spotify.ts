@@ -616,7 +616,25 @@ router.post('/backup-liked-songs', logged, withHttpClient, async (req, res) => {
 router.get('/backup-liked-songs/versions', logged, async (req, res) => {
   const { user } = req as LoggedRequest;
   const backups = await getBackups(user._id.toString());
-  res.status(200).send(backups.map(b => ({ id: b._id, date: b.createdAt })));
+  
+  // Calculate count for each backup (like in restore function)
+  const backupsWithCount = backups.map((backup, index) => {
+    const relevant = backups.slice(0, index + 1);
+    const songs = new Set<string>();
+    for (const b of relevant) {
+      for (const c of b.changes) {
+        if (c.action === 'add') songs.add(c.songId);
+        else songs.delete(c.songId);
+      }
+    }
+    return {
+      id: backup._id,
+      date: backup.createdAt,
+      count: songs.size
+    };
+  });
+  
+  res.status(200).send(backupsWithCount);
 });
 
 router.post(

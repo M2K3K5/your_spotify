@@ -573,7 +573,7 @@ export const api = {
   backupLikedSongs: (status: boolean) =>
     post<{ success: boolean }>("/spotify/backup-liked-songs", { status }),
   getBackupVersions: () =>
-    get<{ id: string; date: string }[]>("/spotify/backup-liked-songs/versions"),
+    get<{ id: string; date: string; count: number }[]>("/spotify/backup-liked-songs/versions"),
   restoreBackup: (id: string) =>
     post<{ success: boolean }>("/spotify/backup-liked-songs/restore", { id }),
 };

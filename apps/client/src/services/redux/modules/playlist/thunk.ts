@@ -77,7 +77,7 @@ export const restoreLikedSongsBackup = myAsyncThunk<boolean, string>(
   }
 );
 
-export const fetchLikedSongsBackupVersions = myAsyncThunk<{ id: string; date: string }[] | null, void>(
+export const fetchLikedSongsBackupVersions = myAsyncThunk<{ id: string; date: string; count: number }[] | null, void>(
   "@playlist/backup-liked-songs/versions",
   async () => {
     try {
