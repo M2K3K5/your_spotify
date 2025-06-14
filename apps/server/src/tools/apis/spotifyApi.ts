@@ -8,7 +8,15 @@ import { Spotify } from "../oauth/Provider";
 import { PromiseQueue } from "../queue";
 import { User } from "../../database/schemas/user";
 import { promises as fs } from "fs";
-import { createBackup, deleteOldBackups, getBackupsUntil } from "../../database/queries/likedSongsBackup";
+import { createBackup as createLikedBackup, deleteOldBackups as deleteOldLikedBackups, getBackupsUntil as getLikedBackupsUntil } from "../../database/queries/likedSongsBackup";
+import {
+  createBackup as createPlaylistBackup,
+  deleteOldBackups as deleteOldPlaylistBackups,
+  getBackupsUntil as getPlaylistBackupsUntil,
+} from "../../database/queries/playlistBackup";
+import {
+  getActiveConfigs,
+} from "../../database/queries/playlistBackupConfig";
 
 export const squeue = new PromiseQueue();
 
@@ -430,9 +438,49 @@ export class SpotifyAPI {
       ];
 
       if (changes.length > 0) {
-        await createBackup(user._id.toString(), changes);
+        await createLikedBackup(user._id.toString(), changes);
       }
-      await deleteOldBackups(user._id.toString(), 2);
+      await deleteOldLikedBackups(user._id.toString(), 2);
+    } catch (e) {
+      logger.error(e);
+    }
+  }
+
+  async backupPlaylist(user: User, playlistId: string) {
+    try {
+      const tracks = await this.getPlaylistTracks(playlistId);
+      const ids = tracks.map(t => t.track.id);
+      const previousBackups = await getPlaylistBackupsUntil(
+        user._id.toString(),
+        playlistId,
+        new Date(),
+      );
+      const currentSet = new Set<string>();
+      for (const backup of previousBackups) {
+        for (const change of backup.changes) {
+          if (change.action === 'add') currentSet.add(change.songId);
+          else currentSet.delete(change.songId);
+        }
+      }
+
+      const toAdd = ids.filter(id => !currentSet.has(id));
+      const toRemove = Array.from(currentSet).filter(
+        id => !ids.includes(id),
+      );
+
+      if (previousBackups.length === 0 && toAdd.length === 0) {
+        toAdd.push(...ids);
+      }
+
+      const changes = [
+        ...toAdd.map(id => ({ songId: id, action: 'add' as const })),
+        ...toRemove.map(id => ({ songId: id, action: 'remove' as const })),
+      ];
+
+      if (changes.length > 0) {
+        await createPlaylistBackup(user._id.toString(), playlistId, changes);
+      }
+      await deleteOldPlaylistBackups(user._id.toString(), playlistId, 2);
     } catch (e) {
       logger.error(e);
     }

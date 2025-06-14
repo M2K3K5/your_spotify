@@ -115,6 +115,12 @@ export function useLinks() {
               icon: <EditOutlined />,
               iconOn: <Edit />,
             },
+            {
+              label: 'Playlist backup',
+              link: '/tools/playlist-backup',
+              icon: <EditOutlined />,
+              iconOn: <Edit />,
+            },
           ],
         },
         {

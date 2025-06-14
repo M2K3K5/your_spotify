@@ -7,6 +7,7 @@ import { User } from "../database/schemas/user";
 import { logger } from "../tools/logger";
 import { retryPromise, wait } from "../tools/misc";
 import { SpotifyAPI } from "../tools/apis/spotifyApi";
+import { getActiveConfigs } from "../database/queries/playlistBackupConfig";
 import { Infos } from "../database/schemas/info";
 import { getTracksAlbumsArtists, storeIterationOfLoop } from "./dbTools";
 
@@ -123,6 +124,16 @@ export const dbLoop = async () => {
           if (user.likedSongsBackupStatus != 'inactive' && isSyncTime) {
             const spotifyApi = new SpotifyAPI(user._id.toString());
             await spotifyApi.backupLikedSongs(user);
+          }
+
+          if (isSyncTime) {
+            const configs = await getActiveConfigs(user._id.toString());
+            if (configs.length > 0) {
+              const spotifyApi = new SpotifyAPI(user._id.toString());
+              for (const cfg of configs) {
+                await spotifyApi.backupPlaylist(user, cfg.playlistId);
+              }
+            }
           }
         }
       }

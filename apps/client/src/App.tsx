@@ -33,6 +33,7 @@ import Benchmarks from "./scenes/Benchmarks";
 import ApiEndpointSetToFronted from "./scenes/Error/ApiEndpointSetToFronted";
 import PlaylistEdit from "./scenes/Tools/PlaylistEdit";
 import LikedSongsBackup from "./scenes/Tools/LikedSongsBackup";
+import PlaylistBackup from "./scenes/Tools/PlaylistBackup";
 
 function App() {
   const dark = useSelector(selectDarkMode);
@@ -207,6 +208,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <LikedSongsBackup />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/tools/playlist-backup"
+                element={
+                  <PrivateRoute>
+                    <PlaylistBackup />
                   </PrivateRoute>
                 }
               />
