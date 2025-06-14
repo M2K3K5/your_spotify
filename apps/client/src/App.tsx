@@ -32,7 +32,6 @@ import AlbumStats from "./scenes/AlbumStats";
 import Benchmarks from "./scenes/Benchmarks";
 import ApiEndpointSetToFronted from "./scenes/Error/ApiEndpointSetToFronted";
 import PlaylistEdit from "./scenes/Tools/PlaylistEdit";
-import LikedSongsBackup from "./scenes/Tools/LikedSongsBackup";
 import PlaylistBackup from "./scenes/Tools/PlaylistBackup";
 
 function App() {
@@ -200,14 +199,6 @@ function App() {
                 element={
                   <PrivateRoute>
                     <PlaylistEdit />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/tools/liked-songs-backup"
-                element={
-                  <PrivateRoute>
-                    <LikedSongsBackup />
                   </PrivateRoute>
                 }
               />

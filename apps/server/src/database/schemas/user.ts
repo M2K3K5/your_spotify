@@ -27,7 +27,6 @@ export interface User {
   firstListenedAt?: Date;
   syncLikedSongsPlaylistId: string | null;
   syncLikedSongsStatus: "inactive" | "active" | "loading" | "failed";
-  likedSongsBackupStatus: "inactive" | "active" | "loading" | "failed";
 }
 
 export const UserSchema = new Schema<User>(
@@ -68,11 +67,6 @@ export const UserSchema = new Schema<User>(
     firstListenedAt: { type: Date },
     syncLikedSongsPlaylistId: { type: String, default: null },
     syncLikedSongsStatus: {
-      type: String,
-      enum: ["inactive", "active", "loading", "failed"],
-      default: "inactive",
-    },
-    likedSongsBackupStatus: {
       type: String,
       enum: ["inactive", "active", "loading", "failed"],
       default: "inactive",

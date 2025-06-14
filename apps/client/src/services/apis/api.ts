@@ -570,12 +570,6 @@ export const api = {
       status,
     }),
   syncLikedSongsStatus: () => get<SyncLikedSongsStatusResponse>("/spotify/sync-liked-songs-status"),
-  backupLikedSongs: (status: boolean) =>
-    post<{ success: boolean }>("/spotify/backup-liked-songs", { status }),
-  getBackupVersions: () =>
-    get<{ id: string; date: string; count: number }[]>("/spotify/backup-liked-songs/versions"),
-  restoreBackup: (id: string) =>
-    post<{ success: boolean }>("/spotify/backup-liked-songs/restore", { id }),
   setPlaylistBackup: (
     playlistId: string,
     playlistName: string,

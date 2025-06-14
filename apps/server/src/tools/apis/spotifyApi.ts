@@ -8,15 +8,11 @@ import { Spotify } from "../oauth/Provider";
 import { PromiseQueue } from "../queue";
 import { User } from "../../database/schemas/user";
 import { promises as fs } from "fs";
-import { createBackup as createLikedBackup, deleteOldBackups as deleteOldLikedBackups, getBackupsUntil as getLikedBackupsUntil } from "../../database/queries/likedSongsBackup";
 import {
   createBackup as createPlaylistBackup,
   deleteOldBackups as deleteOldPlaylistBackups,
   getBackupsUntil as getPlaylistBackupsUntil,
 } from "../../database/queries/playlistBackup";
-import {
-  getActiveConfigs,
-} from "../../database/queries/playlistBackupConfig";
 
 export const squeue = new PromiseQueue();
 
@@ -407,48 +403,12 @@ export class SpotifyAPI {
     }
   }
 
-  async backupLikedSongs(user: User) {
-    try {
-      const likedSongs = await this.getUsersSavedTracks();
-      const likedIds = likedSongs.map(t => t.track.id);
-      const previousBackups = await getBackupsUntil(
-        user._id.toString(),
-        new Date(),
-      );
-      const currentSet = new Set<string>();
-      for (const backup of previousBackups) {
-        for (const change of backup.changes) {
-          if (change.action === 'add') currentSet.add(change.songId);
-          else currentSet.delete(change.songId);
-        }
-      }
-
-      const toAdd = likedIds.filter(id => !currentSet.has(id));
-      const toRemove = Array.from(currentSet).filter(
-        id => !likedIds.includes(id),
-      );
-
-      if (previousBackups.length === 0 && toAdd.length === 0) {
-        toAdd.push(...likedIds);
-      }
-
-      const changes = [
-        ...toAdd.map(id => ({ songId: id, action: 'add' as const })),
-        ...toRemove.map(id => ({ songId: id, action: 'remove' as const })),
-      ];
-
-      if (changes.length > 0) {
-        await createLikedBackup(user._id.toString(), changes);
-      }
-      await deleteOldLikedBackups(user._id.toString(), 2);
-    } catch (e) {
-      logger.error(e);
-    }
-  }
-
   async backupPlaylist(user: User, playlistId: string) {
     try {
-      const tracks = await this.getPlaylistTracks(playlistId);
+      const tracks =
+        playlistId === 'liked'
+          ? await this.getUsersSavedTracks()
+          : await this.getPlaylistTracks(playlistId);
       const ids = tracks.map(t => t.track.id);
       const previousBackups = await getPlaylistBackupsUntil(
         user._id.toString(),

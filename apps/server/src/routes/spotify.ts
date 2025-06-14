@@ -37,16 +37,10 @@ import {
 import { SpotifyRequest, LoggedRequest, Timesplit } from "../tools/types";
 import { toDate, toNumber } from "../tools/zod";
 import {
-  getBackups,
-  getBackupsUntil,
-} from "../database/queries/likedSongsBackup";
-import {
-  addConfig as addPlaylistBackupConfig,
   getConfigs as getPlaylistBackupConfigs,
   updateConfig as updatePlaylistBackupConfig,
 } from "../database/queries/playlistBackupConfig";
 import {
-  createBackup as createPlaylistBackup,
   getBackups as getPlaylistBackups,
   getBackupsUntil as getPlaylistBackupsUntil,
 } from "../database/queries/playlistBackup";
@@ -612,19 +606,6 @@ router.post("/playlist/remove-likedsongs", logged, withHttpClient, async (req, r
   });
 });
 
-router.post('/backup-liked-songs', logged, withHttpClient, async (req, res) => {
-  const { client, user } = req as LoggedRequest & SpotifyRequest;
-  const { status } = validate(req.body, booleanSchema);
-
-  if (status) {
-    await storeInUser('_id', user._id, { likedSongsBackupStatus: 'active' });
-    await client.backupLikedSongs(user);
-    res.status(200).json({ success: true });
-  } else {
-    await storeInUser('_id', user._id, { likedSongsBackupStatus: 'inactive' });
-    res.status(200).json({ success: true });
-  }
-});
 
 const playlistBackupConfigSchema = z.object({
   playlistId: z.string(),
@@ -709,61 +690,3 @@ router.post(
   },
 );
 
-router.get('/backup-liked-songs/versions', logged, async (req, res) => {
-  const { user } = req as LoggedRequest;
-  const backups = await getBackups(user._id.toString());
-  
-  // Calculate count for each backup (like in restore function)
-  const backupsWithCount = backups.map((backup, index) => {
-    const relevant = backups.slice(0, index + 1);
-    const songs = new Set<string>();
-    for (const b of relevant) {
-      for (const c of b.changes) {
-        if (c.action === 'add') songs.add(c.songId);
-        else songs.delete(c.songId);
-      }
-    }
-    return {
-      id: backup._id,
-      date: backup.createdAt,
-      count: songs.size
-    };
-  });
-  
-  res.status(200).send(backupsWithCount);
-});
-
-router.post(
-  '/backup-liked-songs/restore',
-  logged,
-  withHttpClient,
-  async (req, res) => {
-    const { client, user } = req as LoggedRequest & SpotifyRequest;
-    const body = validate(req.body, z.object({ id: z.string() }));
-    const backups = await getBackupsUntil(
-      user._id.toString(),
-      new Date(8640000000000000),
-    );
-    const targetIndex = backups.findIndex(b => b._id.toString() === body.id);
-    if (targetIndex === -1) {
-      res.status(404).end();
-      return;
-    }
-    const relevant = backups.slice(0, targetIndex + 1);
-    const songs = new Set<string>();
-    for (const b of relevant) {
-      for (const c of b.changes) {
-        if (c.action === 'add') songs.add(c.songId);
-        else songs.delete(c.songId);
-      }
-    }
-    const current = await client.getUsersSavedTracks();
-    const currentIds = current.map(t => t.track.id);
-    const toAdd = Array.from(songs).filter(id => !currentIds.includes(id));
-    const toRemove = currentIds.filter(id => !songs.has(id));
-    if (toAdd.length) await client.addUsersSavedTracks(toAdd);
-    if (toRemove.length) await client.removeUsersSavedTracks(toRemove);
-    await client.backupLikedSongs(user);
-    res.status(200).json({ success: true });
-  },
-);
