@@ -9,7 +9,7 @@ import { TrackSchema } from "./schemas/track";
 import { UserSchema } from "./schemas/user";
 import { PrivateDataSchema } from "./schemas/privateData";
 import { PlaylistBackupSchema } from "./schemas/playlistBackup";
-import { PlaylistBackupConfigSchema } from "./schemas/playlistBackupConfig";
+import { PlaylistBackupTargetSchema } from "./schemas/playlistBackupTarget";
 
 export const UserModel = model("User", UserSchema);
 export const InfosModel = model("Infos", InfosSchema);
@@ -27,7 +27,7 @@ export const PlaylistBackupModel = model(
   "PlaylistBackup",
   PlaylistBackupSchema,
 );
-export const PlaylistBackupConfigModel = model(
-  "PlaylistBackupConfig",
-  PlaylistBackupConfigSchema,
+export const PlaylistBackupTargetModel = model(
+  "PlaylistBackupTarget",
+  PlaylistBackupTargetSchema,
 );

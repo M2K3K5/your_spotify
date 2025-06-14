@@ -37,9 +37,9 @@ import {
 import { SpotifyRequest, LoggedRequest, Timesplit } from "../tools/types";
 import { toDate, toNumber } from "../tools/zod";
 import {
-  getConfigs as getPlaylistBackupConfigs,
-  updateConfig as updatePlaylistBackupConfig,
-} from "../database/queries/playlistBackupConfig";
+  getTargets as getPlaylistBackupTargets,
+  updateTarget as updatePlaylistBackupTarget,
+} from "../database/queries/playlistBackupTarget";
 import {
   getBackups as getPlaylistBackups,
   getBackupsUntil as getPlaylistBackupsUntil,
@@ -607,7 +607,7 @@ router.post("/playlist/remove-likedsongs", logged, withHttpClient, async (req, r
 });
 
 
-const playlistBackupConfigSchema = z.object({
+const playlistBackupTargetSchema = z.object({
   playlistId: z.string(),
   playlistName: z.string(),
   status: z.boolean(),
@@ -615,8 +615,8 @@ const playlistBackupConfigSchema = z.object({
 
 router.post('/playlist-backup/config', logged, async (req, res) => {
   const { user } = req as LoggedRequest;
-  const body = validate(req.body, playlistBackupConfigSchema);
-  await updatePlaylistBackupConfig(user._id.toString(), body.playlistId, {
+  const body = validate(req.body, playlistBackupTargetSchema);
+  await updatePlaylistBackupTarget(user._id.toString(), body.playlistId, {
     playlistName: body.playlistName,
     active: body.status,
   });
@@ -625,8 +625,8 @@ router.post('/playlist-backup/config', logged, async (req, res) => {
 
 router.get('/playlist-backup/configs', logged, async (req, res) => {
   const { user } = req as LoggedRequest;
-  const configs = await getPlaylistBackupConfigs(user._id.toString());
-  res.status(200).send(configs);
+  const targets = await getPlaylistBackupTargets(user._id.toString());
+  res.status(200).send(targets);
 });
 
 router.get('/playlist-backup/:playlistId/versions', logged, async (req, res) => {

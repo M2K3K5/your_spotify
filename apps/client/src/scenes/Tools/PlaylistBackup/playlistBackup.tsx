@@ -9,7 +9,7 @@ import { selectUser } from '../../../services/redux/modules/user/selector';
 import { Playlist } from '../../../services/redux/modules/playlist/types';
 import s from './index.module.css';
 
-interface Config {
+interface Target {
   playlistId: string;
   playlistName: string;
   active: boolean;
@@ -18,19 +18,19 @@ interface Config {
 export default function PlaylistBackup() {
   const user = useSelector(selectUser);
   const playlists = useAPI(api.getPlaylists);
-  const [configs, setConfigs] = useState<Config[]>([]);
+  const [targets, setTargets] = useState<Target[]>([]);
   const [search, setSearch] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>('');
   const [versions, setVersions] = useState<{ id: string; date: string; count: number }[] | null>(null);
 
-  const refreshConfigs = useCallback(async () => {
-    const { data } = await api.getPlaylistBackupConfigs();
-    setConfigs(data);
+  const refreshTargets = useCallback(async () => {
+    const { data } = await api.getPlaylistBackupTargets();
+    setTargets(data);
   }, []);
 
   useEffect(() => {
-    refreshConfigs();
-  }, [refreshConfigs]);
+    refreshTargets();
+  }, [refreshTargets]);
 
   useEffect(() => {
     if (selectedPlaylist) {
@@ -42,12 +42,12 @@ export default function PlaylistBackup() {
 
   const toggle = useCallback(
     async (pl: Playlist) => {
-      const existing = configs.find(c => c.playlistId === pl.id);
+      const existing = targets.find(t => t.playlistId === pl.id);
       const newStatus = !existing?.active;
       const { data } = await api.setPlaylistBackup(pl.id, pl.name, newStatus);
-      if (data.success) refreshConfigs();
+      if (data.success) refreshTargets();
     },
-    [configs, refreshConfigs],
+    [targets, refreshTargets],
   );
 
   const filtered = useMemo(
@@ -70,7 +70,7 @@ export default function PlaylistBackup() {
           onChange={ev => setSearch(ev.target.value)}
         />
         {filtered.map(pl => {
-          const cfg = configs.find(c => c.playlistId === pl.id);
+          const cfg = targets.find(t => t.playlistId === pl.id);
           const active = cfg?.active ?? false;
           return (
             <Button key={pl.id} variant="contained" onClick={() => toggle(pl)}>
@@ -86,11 +86,11 @@ export default function PlaylistBackup() {
             value={selectedPlaylist}
             onChange={ev => setSelectedPlaylist(ev.target.value)}
           >
-            {configs
-              .filter(c => c.active)
-              .map(c => (
-                <MenuItem key={c.playlistId} value={c.playlistId}>
-                  {c.playlistName}
+            {targets
+              .filter(t => t.active)
+              .map(t => (
+                <MenuItem key={t.playlistId} value={t.playlistId}>
+                  {t.playlistName}
                 </MenuItem>
               ))}
             <MenuItem value="liked">Liked songs</MenuItem>
@@ -102,7 +102,7 @@ export default function PlaylistBackup() {
               <Button
                 key={v.id}
                 onClick={() =>
-                  api.restorePlaylistBackup(selectedPlaylist, v.id).then(() => refreshConfigs())
+                  api.restorePlaylistBackup(selectedPlaylist, v.id).then(() => refreshTargets())
                 }
               >
                 {new Date(v.date).toLocaleString()} ({v.count} tracks)
@@ -112,12 +112,12 @@ export default function PlaylistBackup() {
         )}
         <Text element="div">Current backups:</Text>
         <ul>
-          {configs
-            .filter(c => c.active)
-            .map(c => (
-              <li key={c.playlistId}>{c.playlistName}</li>
+            {targets
+            .filter(t => t.active)
+            .map(t => (
+              <li key={t.playlistId}>{t.playlistName}</li>
             ))}
-          {configs.every(c => c.playlistId !== 'liked') && <li>Liked songs</li>}
+          {targets.every(t => t.playlistId !== 'liked') && <li>Liked songs</li>}
         </ul>
       </div>
     </div>

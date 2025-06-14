@@ -7,7 +7,7 @@ import { User } from "../database/schemas/user";
 import { logger } from "../tools/logger";
 import { retryPromise, wait } from "../tools/misc";
 import { SpotifyAPI } from "../tools/apis/spotifyApi";
-import { getActiveConfigs } from "../database/queries/playlistBackupConfig";
+import { getActiveTargets } from "../database/queries/playlistBackupTarget";
 import { Infos } from "../database/schemas/info";
 import { getTracksAlbumsArtists, storeIterationOfLoop } from "./dbTools";
 
@@ -123,11 +123,11 @@ export const dbLoop = async () => {
           }
 
           if (isSyncTime) {
-            const configs = await getActiveConfigs(user._id.toString());
-            if (configs.length > 0) {
+            const targets = await getActiveTargets(user._id.toString());
+            if (targets.length > 0) {
               const spotifyApi = new SpotifyAPI(user._id.toString());
-              for (const cfg of configs) {
-                await spotifyApi.backupPlaylist(user, cfg.playlistId);
+              for (const t of targets) {
+                await spotifyApi.backupPlaylist(user, t.playlistId);
               }
             }
           }
