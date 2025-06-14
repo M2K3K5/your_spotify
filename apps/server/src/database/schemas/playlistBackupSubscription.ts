@@ -1,13 +1,13 @@
 import { Schema, Types } from 'mongoose';
 
-export interface PlaylistBackupTarget {
+export interface PlaylistBackupSubscription {
   owner: Types.ObjectId;
   playlistId: string;
   playlistName: string;
   active: boolean;
 }
 
-export const PlaylistBackupTargetSchema = new Schema<PlaylistBackupTarget>({
+export const PlaylistBackupSubscriptionSchema = new Schema<PlaylistBackupSubscription>({
   owner: { type: Schema.Types.ObjectId, ref: 'User', index: true },
   playlistId: { type: String },
   playlistName: { type: String },

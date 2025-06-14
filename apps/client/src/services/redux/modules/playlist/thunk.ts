@@ -57,12 +57,12 @@ export const setPlaylistBackup = myAsyncThunk<
   }
 });
 
-export const fetchPlaylistBackupTargets = myAsyncThunk<
+export const fetchPlaylistBackupSubscriptions = myAsyncThunk<
   { playlistId: string; playlistName: string; active: boolean }[] | null,
   void
 >("@playlist/playlist-backup/configs", async () => {
   try {
-    const { data } = await api.getPlaylistBackupTargets();
+    const { data } = await api.getPlaylistBackupSubscriptions();
     return data;
   } catch (e) {
     console.error(e);

@@ -580,7 +580,7 @@ export const api = {
       playlistName,
       status,
     }),
-  getPlaylistBackupTargets: () =>
+  getPlaylistBackupSubscriptions: () =>
     get<{ playlistId: string; playlistName: string; active: boolean }[]>(
       "/spotify/playlist-backup/configs",
     ),
