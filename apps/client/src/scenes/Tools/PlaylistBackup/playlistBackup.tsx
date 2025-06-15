@@ -69,7 +69,7 @@ export default function PlaylistBackup() {
   }, [subscriptions]);
 
   const toggle = useCallback(
-    async (pl: Playlist) => {
+    async (pl: Pick<Playlist, 'id' | 'name'>) => {
       const existing = subscriptions.find(s => s.playlistId === pl.id);
       const newStatus = !existing?.active;
       const { data } = await api.setPlaylistBackup(pl.id, pl.name, newStatus);
@@ -110,7 +110,7 @@ export default function PlaylistBackup() {
               <TableRow>
                 <TableCell>Playlist</TableCell>
                 <TableCell>Backup date</TableCell>
-                <TableCell />
+                <TableCell colSpan={2}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -149,6 +149,16 @@ export default function PlaylistBackup() {
                         }
                       >
                         Restore
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="warning"
+                        onClick={() => toggle({ id: s.playlistId, name: s.playlistName } as Playlist)}
+                      >
+                        Disable Backup
                       </Button>
                     </TableCell>
                   </TableRow>
