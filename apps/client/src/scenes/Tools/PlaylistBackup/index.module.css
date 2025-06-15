@@ -1,5 +1,32 @@
 .content {
+  padding: var(--page-padding);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 32px;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 400px;
+}
+
+.table {
+  overflow-x: auto;
+}
+
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 8px;
+  text-align: left;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: var(--content-background);
 }
