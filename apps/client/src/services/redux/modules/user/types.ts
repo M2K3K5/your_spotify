@@ -26,7 +26,6 @@ export interface User {
   isGuest: boolean;
   syncLikedSongsPlaylistId: string | null;
   syncLikedSongsStatus: "inactive" | "active" | "loading" | "failed";
-  likedSongsBackupStatus: "inactive" | "active" | "loading" | "failed";
 }
 
 export interface SyncLikedSongsResponse {

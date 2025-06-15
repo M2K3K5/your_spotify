@@ -8,7 +8,11 @@ import { Spotify } from "../oauth/Provider";
 import { PromiseQueue } from "../queue";
 import { User } from "../../database/schemas/user";
 import { promises as fs } from "fs";
-import { createBackup, deleteOldBackups, getBackupsUntil } from "../../database/queries/likedSongsBackup";
+import {
+  createBackup as createPlaylistBackup,
+  deleteOldBackups as deleteOldPlaylistBackups,
+  getBackupsUntil as getPlaylistBackupsUntil,
+} from "../../database/queries/playlistBackup";
 
 export const squeue = new PromiseQueue();
 
@@ -399,12 +403,16 @@ export class SpotifyAPI {
     }
   }
 
-  async backupLikedSongs(user: User) {
+  async backupPlaylist(user: User, playlistId: string) {
     try {
-      const likedSongs = await this.getUsersSavedTracks();
-      const likedIds = likedSongs.map(t => t.track.id);
-      const previousBackups = await getBackupsUntil(
+      const tracks =
+        playlistId === 'liked'
+          ? await this.getUsersSavedTracks()
+          : await this.getPlaylistTracks(playlistId);
+      const ids = tracks.map(t => t.track.id);
+      const previousBackups = await getPlaylistBackupsUntil(
         user._id.toString(),
+        playlistId,
         new Date(),
       );
       const currentSet = new Set<string>();
@@ -415,13 +423,13 @@ export class SpotifyAPI {
         }
       }
 
-      const toAdd = likedIds.filter(id => !currentSet.has(id));
+      const toAdd = ids.filter(id => !currentSet.has(id));
       const toRemove = Array.from(currentSet).filter(
-        id => !likedIds.includes(id),
+        id => !ids.includes(id),
       );
 
       if (previousBackups.length === 0 && toAdd.length === 0) {
-        toAdd.push(...likedIds);
+        toAdd.push(...ids);
       }
 
       const changes = [
@@ -430,9 +438,9 @@ export class SpotifyAPI {
       ];
 
       if (changes.length > 0) {
-        await createBackup(user._id.toString(), changes);
+        await createPlaylistBackup(user._id.toString(), playlistId, changes);
       }
-      await deleteOldBackups(user._id.toString(), 2);
+      await deleteOldPlaylistBackups(user._id.toString(), playlistId, 2);
     } catch (e) {
       logger.error(e);
     }

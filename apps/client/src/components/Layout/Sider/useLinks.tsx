@@ -110,8 +110,8 @@ export function useLinks() {
               iconOn: <Edit />,
             },
             {
-              label: 'Liked songs backup',
-              link: '/tools/liked-songs-backup',
+              label: 'Playlist backup',
+              link: '/tools/playlist-backup',
               icon: <EditOutlined />,
               iconOn: <Edit />,
             },

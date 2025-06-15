@@ -7,6 +7,7 @@ import { User } from "../database/schemas/user";
 import { logger } from "../tools/logger";
 import { retryPromise, wait } from "../tools/misc";
 import { SpotifyAPI } from "../tools/apis/spotifyApi";
+import { getActiveSubscriptions } from "../database/queries/playlistBackupSubscription";
 import { Infos } from "../database/schemas/info";
 import { getTracksAlbumsArtists, storeIterationOfLoop } from "./dbTools";
 
@@ -120,9 +121,15 @@ export const dbLoop = async () => {
             const spotifyApi = new SpotifyAPI(user._id.toString());
             await spotifyApi.syncLikedTracks(user);
           }
-          if (user.likedSongsBackupStatus != 'inactive' && isSyncTime) {
-            const spotifyApi = new SpotifyAPI(user._id.toString());
-            await spotifyApi.backupLikedSongs(user);
+
+          if (isSyncTime) {
+            const subscriptions = await getActiveSubscriptions(user._id.toString());
+            if (subscriptions.length > 0) {
+              const spotifyApi = new SpotifyAPI(user._id.toString());
+              for (const s of subscriptions) {
+                await spotifyApi.backupPlaylist(user, s.playlistId);
+              }
+            }
           }
         }
       }

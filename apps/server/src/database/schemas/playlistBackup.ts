@@ -1,18 +1,20 @@
 import { Schema, Types } from 'mongoose';
 
-export interface LikedSongsChange {
+export interface PlaylistChange {
   songId: string;
   action: 'add' | 'remove';
 }
 
-export interface LikedSongsBackup {
+export interface PlaylistBackup {
   owner: Types.ObjectId;
+  playlistId: string;
   createdAt: Date;
-  changes: LikedSongsChange[];
+  changes: PlaylistChange[];
 }
 
-export const LikedSongsBackupSchema = new Schema<LikedSongsBackup>({
+export const PlaylistBackupSchema = new Schema<PlaylistBackup>({
   owner: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+  playlistId: { type: String, index: true },
   createdAt: { type: Date, default: Date.now, index: true },
   changes: [
     {

@@ -8,7 +8,8 @@ import { MigrationSchema } from "./schemas/migration";
 import { TrackSchema } from "./schemas/track";
 import { UserSchema } from "./schemas/user";
 import { PrivateDataSchema } from "./schemas/privateData";
-import { LikedSongsBackupSchema } from "./schemas/likedSongsBackup";
+import { PlaylistBackupSchema } from "./schemas/playlistBackup";
+import { PlaylistBackupSubscriptionSchema } from "./schemas/playlistBackupSubscription";
 
 export const UserModel = model("User", UserSchema);
 export const InfosModel = model("Infos", InfosSchema);
@@ -22,7 +23,11 @@ export const GlobalPreferencesModel = model(
 );
 export const ImporterStateModel = model("ImporterState", ImporterStateSchema);
 export const PrivateDataModel = model("PrivateData", PrivateDataSchema);
-export const LikedSongsBackupModel = model(
-  "LikedSongsBackup",
-  LikedSongsBackupSchema,
+export const PlaylistBackupModel = model(
+  "PlaylistBackup",
+  PlaylistBackupSchema,
+);
+export const PlaylistBackupSubscriptionModel = model(
+  "PlaylistBackupSubscription",
+  PlaylistBackupSubscriptionSchema,
 );

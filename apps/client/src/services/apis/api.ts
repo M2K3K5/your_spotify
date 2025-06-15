@@ -570,12 +570,29 @@ export const api = {
       status,
     }),
   syncLikedSongsStatus: () => get<SyncLikedSongsStatusResponse>("/spotify/sync-liked-songs-status"),
-  backupLikedSongs: (status: boolean) =>
-    post<{ success: boolean }>("/spotify/backup-liked-songs", { status }),
-  getBackupVersions: () =>
-    get<{ id: string; date: string; count: number }[]>("/spotify/backup-liked-songs/versions"),
-  restoreBackup: (id: string) =>
-    post<{ success: boolean }>("/spotify/backup-liked-songs/restore", { id }),
+  setPlaylistBackup: (
+    playlistId: string,
+    playlistName: string,
+    status: boolean,
+  ) =>
+    post<{ success: boolean }>("/spotify/playlist-backup/config", {
+      playlistId,
+      playlistName,
+      status,
+    }),
+  getPlaylistBackupSubscriptions: () =>
+    get<{ playlistId: string; playlistName: string; active: boolean }[]>(
+      "/spotify/playlist-backup/configs",
+    ),
+  getPlaylistBackupVersions: (playlistId: string) =>
+    get<{ id: string; date: string; count: number }[]>(
+      `/spotify/playlist-backup/${playlistId}/versions`,
+    ),
+  restorePlaylistBackup: (playlistId: string, id: string) =>
+    post<{ success: boolean }>(
+      `/spotify/playlist-backup/${playlistId}/restore`,
+      { id },
+    ),
 };
 
 export const DEFAULT_ITEMS_TO_LOAD = 20;

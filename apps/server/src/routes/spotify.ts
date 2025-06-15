@@ -36,7 +36,14 @@ import {
 } from "../tools/middleware";
 import { SpotifyRequest, LoggedRequest, Timesplit } from "../tools/types";
 import { toDate, toNumber } from "../tools/zod";
-import { getBackups, getBackupsUntil } from "../database/queries/likedSongsBackup";
+import {
+  getSubscriptions as getPlaylistBackupSubscriptions,
+  updateSubscription as updatePlaylistBackupSubscription,
+} from "../database/queries/playlistBackupSubscription";
+import {
+  getBackups as getPlaylistBackups,
+  getBackupsUntil as getPlaylistBackupsUntil,
+} from "../database/queries/playlistBackup";
 
 export const router = Router();
 
@@ -599,25 +606,34 @@ router.post("/playlist/remove-likedsongs", logged, withHttpClient, async (req, r
   });
 });
 
-router.post('/backup-liked-songs', logged, withHttpClient, async (req, res) => {
-  const { client, user } = req as LoggedRequest & SpotifyRequest;
-  const { status } = validate(req.body, booleanSchema);
 
-  if (status) {
-    await storeInUser('_id', user._id, { likedSongsBackupStatus: 'active' });
-    await client.backupLikedSongs(user);
-    res.status(200).json({ success: true });
-  } else {
-    await storeInUser('_id', user._id, { likedSongsBackupStatus: 'inactive' });
-    res.status(200).json({ success: true });
-  }
+const playlistBackupSubscriptionSchema = z.object({
+  playlistId: z.string(),
+  playlistName: z.string(),
+  status: z.boolean(),
 });
 
-router.get('/backup-liked-songs/versions', logged, async (req, res) => {
+router.post('/playlist-backup/config', logged, async (req, res) => {
   const { user } = req as LoggedRequest;
-  const backups = await getBackups(user._id.toString());
-  
-  // Calculate count for each backup (like in restore function)
+  const body = validate(req.body, playlistBackupSubscriptionSchema);
+  await updatePlaylistBackupSubscription(user._id.toString(), body.playlistId, {
+    playlistName: body.playlistName,
+    active: body.status,
+  });
+  res.status(200).json({ success: true });
+});
+
+router.get('/playlist-backup/configs', logged, async (req, res) => {
+  const { user } = req as LoggedRequest;
+  const subscriptions = await getPlaylistBackupSubscriptions(user._id.toString());
+  res.status(200).send(subscriptions);
+});
+
+router.get('/playlist-backup/:playlistId/versions', logged, async (req, res) => {
+  const { user } = req as LoggedRequest;
+  const { playlistId } = req.params;
+  const backups = await getPlaylistBackups(user._id.toString(), playlistId);
+
   const backupsWithCount = backups.map((backup, index) => {
     const relevant = backups.slice(0, index + 1);
     const songs = new Set<string>();
@@ -630,22 +646,24 @@ router.get('/backup-liked-songs/versions', logged, async (req, res) => {
     return {
       id: backup._id,
       date: backup.createdAt,
-      count: songs.size
+      count: songs.size,
     };
   });
-  
+
   res.status(200).send(backupsWithCount);
 });
 
 router.post(
-  '/backup-liked-songs/restore',
+  '/playlist-backup/:playlistId/restore',
   logged,
   withHttpClient,
   async (req, res) => {
     const { client, user } = req as LoggedRequest & SpotifyRequest;
+    const { playlistId } = req.params;
     const body = validate(req.body, z.object({ id: z.string() }));
-    const backups = await getBackupsUntil(
+    const backups = await getPlaylistBackupsUntil(
       user._id.toString(),
+      playlistId,
       new Date(8640000000000000),
     );
     const targetIndex = backups.findIndex(b => b._id.toString() === body.id);
@@ -661,13 +679,14 @@ router.post(
         else songs.delete(c.songId);
       }
     }
-    const current = await client.getUsersSavedTracks();
+    const current = await client.getPlaylistTracks(playlistId);
     const currentIds = current.map(t => t.track.id);
     const toAdd = Array.from(songs).filter(id => !currentIds.includes(id));
     const toRemove = currentIds.filter(id => !songs.has(id));
-    if (toAdd.length) await client.addUsersSavedTracks(toAdd);
-    if (toRemove.length) await client.removeUsersSavedTracks(toRemove);
-    await client.backupLikedSongs(user);
+    if (toAdd.length) await client.addToPlaylist(playlistId, toAdd, 0);
+    if (toRemove.length) await client.removePlaylistTracks(playlistId, toRemove);
+    await client.backupPlaylist(user, playlistId);
     res.status(200).json({ success: true });
   },
 );
+
