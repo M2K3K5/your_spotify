@@ -614,13 +614,23 @@ const playlistBackupSubscriptionSchema = z.object({
 });
 
 router.post('/playlist-backup/config', logged, async (req, res) => {
-  const { user } = req as LoggedRequest;
+  const { client, user } = req as LoggedRequest & SpotifyRequest;
   const body = validate(req.body, playlistBackupSubscriptionSchema);
   await updatePlaylistBackupSubscription(user._id.toString(), body.playlistId, {
     playlistName: body.playlistName,
     active: body.status,
   });
   res.status(200).json({ success: true });
+
+  if (body.status) {
+    client.backupPlaylist(user, body.playlistId)
+      .then(() => {
+        logger.info(`[${user.username}]: Completed background backup for playlist ${body.playlistName}`);
+      })
+      .catch((error) => {
+        logger.error(`Failed to create background backup for playlist ${body.playlistName}:`, error);
+      });
+  }
 });
 
 router.get('/playlist-backup/configs', logged, async (req, res) => {
