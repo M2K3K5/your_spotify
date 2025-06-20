@@ -171,7 +171,7 @@ export default function PlaylistBackup() {
                 disabled={!(selectedVersion || versionsMap[manageId]?.[0])}
                 onClick={() =>
                   api
-                    .restorePlaylistBackup(manageId, selectedVersion || versionsMap[manageId][0].id)
+                    .restorePlaylistBackup(manageId, selectedVersion || versionsMap[manageId]?.[0]?.id || '')
                     .then(() => refreshSubscriptions())
                 }
               >
