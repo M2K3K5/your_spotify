@@ -5,11 +5,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -44,8 +39,9 @@ export default function PlaylistBackup() {
   }, [playlists, user]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [selected, setSelected] = useState<Playlist | null>(null);
+  const [manageId, setManageId] = useState('');
   const [versionsMap, setVersionsMap] = useState<Record<string, { id: string; date: string; count: number }[]>>({});
-  const [selectedVersions, setSelectedVersions] = useState<Record<string, string>>({});
+  const [selectedVersion, setSelectedVersion] = useState('');
 
   const refreshSubscriptions = useCallback(async () => {
     const { data } = await api.getPlaylistBackupSubscriptions();
@@ -97,86 +93,95 @@ export default function PlaylistBackup() {
     <div>
       <Header title="Playlist backup" subtitle="Manage playlist backups" />
       <div className={s.content}>
-        <div className={s.actions}>
-          <Autocomplete
-            options={filtered}
-            getOptionLabel={(pl: Playlist) => pl.name}
-            value={selected}
-            onChange={(ev, val) => setSelected(val)}
-            renderInput={params => <TextField {...params} label="Select playlist" />}
-          />
-          {selected && (
-            <Button variant="contained" onClick={() => toggle(selected)}>
-              {
-                subscriptions.find(s => s.playlistId === selected.id)?.active
-                  ? `Disable ${selected.name}`
-                  : `Enable ${selected.name}`
-              }
-            </Button>
-          )}
+        <div className={s.section}>
+          <Text element="h2">Start a backup</Text>
+          <div className={s.row}>
+            <Autocomplete
+              options={filtered}
+              getOptionLabel={(pl: Playlist) => pl.name}
+              value={selected}
+              onChange={(ev, val) => setSelected(val)}
+              renderInput={params => <TextField {...params} label="Select playlist" />}
+            />
+            {selected && (
+              <Button variant="contained" onClick={() => toggle(selected)}>
+                {
+                  subscriptions.find(s => s.playlistId === selected.id)?.active
+                    ? `Disable ${selected.name}`
+                    : `Enable ${selected.name}`
+                }
+              </Button>
+            )}
+          </div>
         </div>
-        <div className={s.table}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Playlist</TableCell>
-                <TableCell>Backup date</TableCell>
-                <TableCell colSpan={2}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {subscriptions.filter(s => s.active).map(s => {
-                const versions = versionsMap[s.playlistId] || [];
-                const latest = versions[0];
-                const selectedId = selectedVersions[s.playlistId] || latest?.id || '';
-                return (
-                  <TableRow key={s.playlistId}>
-                    <TableCell>{s.playlistName}</TableCell>
-                    <TableCell>
-                      <FormControl fullWidth size="small">
-                        <Select
-                          value={selectedId}
-                          onChange={ev =>
-                            setSelectedVersions(prev => ({ ...prev, [s.playlistId]: ev.target.value as string }))
-                          }
-                        >
-                          {versions.map(v => (
-                            <MenuItem key={v.id} value={v.id}>
-                              {new Date(v.date).toLocaleString()}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        disabled={!selectedId}
-                        onClick={() =>
-                          api
-                            .restorePlaylistBackup(s.playlistId, selectedId)
-                            .then(() => refreshSubscriptions())
-                        }
-                      >
-                        Restore
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        color="warning"
-                        onClick={() => toggle({ id: s.playlistId, name: s.playlistName } as Playlist)}
-                      >
-                        Disable Backup
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+        <div className={s.section}>
+          <Text element="h2">Current backups</Text>
+          <div className={s.row}>
+            <FormControl fullWidth>
+              <InputLabel id="managed-playlist">Playlist</InputLabel>
+              <Select
+                labelId="managed-playlist"
+                label="Playlist"
+                value={manageId}
+                onChange={ev => {
+                  setManageId(ev.target.value as string);
+                  setSelectedVersion('');
+                }}
+              >
+                {subscriptions
+                  .filter(s => s.active)
+                  .map(s => (
+                    <MenuItem key={s.playlistId} value={s.playlistId}>
+                      {s.playlistName}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </FormControl>
+            {manageId && (
+              <Button
+                variant="outlined"
+                color="warning"
+                onClick={() =>
+                  toggle({ id: manageId, name: subscriptions.find(s => s.playlistId === manageId)?.playlistName || '' } as Playlist)
+                }
+              >
+                Disable Backup
+              </Button>
+            )}
+          </div>
+          {manageId && (
+            <div className={s.row}>
+              <FormControl fullWidth>
+                <InputLabel id="version-select">Version</InputLabel>
+                <Select
+                  labelId="version-select"
+                  label="Version"
+                  value={selectedVersion || versionsMap[manageId]?.[0]?.id || ''}
+                  onChange={ev => setSelectedVersion(ev.target.value as string)}
+                >
+                  {(versionsMap[manageId] || []).map(v => (
+                    <MenuItem key={v.id} value={v.id}>
+                      {new Date(v.date).toLocaleString()}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Button
+                variant="contained"
+                disabled={!(selectedVersion || versionsMap[manageId]?.[0])}
+                onClick={() =>
+                  api
+                    .restorePlaylistBackup(manageId, selectedVersion || versionsMap[manageId][0].id)
+                    .then(() => refreshSubscriptions())
+                }
+              >
+                Restore
+              </Button>
+            </div>
+          )}
+          {subscriptions.filter(s => s.active).length === 0 && (
+            <Text>No active backups</Text>
+          )}
         </div>
       </div>
     </div>
