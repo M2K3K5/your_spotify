@@ -97,6 +97,7 @@ export default function PlaylistBackup() {
           <Text element="h2">Start a backup</Text>
           <div className={s.row}>
             <Autocomplete
+              fullWidth
               options={filtered}
               getOptionLabel={(pl: Playlist) => pl.name}
               value={selected}
