@@ -620,7 +620,6 @@ router.post('/playlist-backup/config', logged, async (req, res) => {
     playlistName: body.playlistName,
     active: body.status,
   });
-  res.status(200).json({ success: true });
 
   if (body.status) {
     client.backupPlaylist(user, body.playlistId)
@@ -631,6 +630,8 @@ router.post('/playlist-backup/config', logged, async (req, res) => {
         logger.error(`Failed to create background backup for playlist ${body.playlistName}:`, error);
       });
   }
+  
+  res.status(200).json({ success: true });
 });
 
 router.get('/playlist-backup/configs', logged, async (req, res) => {
