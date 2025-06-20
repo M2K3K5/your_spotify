@@ -679,12 +679,20 @@ router.post(
         else songs.delete(c.songId);
       }
     }
-    const current = await client.getPlaylistTracks(playlistId);
+    const current =
+      playlistId === 'liked'
+        ? await client.getUsersSavedTracks()
+        : await client.getPlaylistTracks(playlistId);
     const currentIds = current.map(t => t.track.id);
     const toAdd = Array.from(songs).filter(id => !currentIds.includes(id));
     const toRemove = currentIds.filter(id => !songs.has(id));
-    if (toAdd.length) await client.addToPlaylist(playlistId, toAdd, 0);
-    if (toRemove.length) await client.removePlaylistTracks(playlistId, toRemove);
+    if (playlistId === 'liked') {
+      if (toAdd.length) await client.addUsersSavedTracks(toAdd);
+      if (toRemove.length) await client.removeUsersSavedTracks(toRemove);
+    } else {
+      if (toAdd.length) await client.addToPlaylist(playlistId, toAdd, 0);
+      if (toRemove.length) await client.removePlaylistTracks(playlistId, toRemove);
+    }
     await client.backupPlaylist(user, playlistId);
     res.status(200).json({ success: true });
   },
