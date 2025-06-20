@@ -138,17 +138,6 @@ export default function PlaylistBackup() {
                   ))}
               </Select>
             </FormControl>
-            {manageId && (
-              <Button
-                variant="outlined"
-                color="warning"
-                onClick={() =>
-                  toggle({ id: manageId, name: subscriptions.find(s => s.playlistId === manageId)?.playlistName || '' } as Playlist)
-                }
-              >
-                Disable
-              </Button>
-            )}
           </div>
           {manageId && (
             <div className={s.row}>
