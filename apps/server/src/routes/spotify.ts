@@ -44,6 +44,7 @@ import {
   getBackups as getPlaylistBackups,
   getBackupsUntil as getPlaylistBackupsUntil,
 } from "../database/queries/playlistBackup";
+import { SpotifyAPI } from "../tools/apis/spotifyApi";
 
 export const router = Router();
 
@@ -622,7 +623,8 @@ router.post('/playlist-backup/config', logged, async (req, res) => {
   });
 
   if (body.status) {
-    client.backupPlaylist(user, body.playlistId)
+    const spotifyApi = new SpotifyAPI(user._id.toString());
+    spotifyApi.backupPlaylist(user, body.playlistId)
       .then(() => {
         logger.info(`[${user.username}]: Completed background backup for playlist ${body.playlistName}`);
       })
@@ -630,7 +632,7 @@ router.post('/playlist-backup/config', logged, async (req, res) => {
         logger.error(`Failed to create background backup for playlist ${body.playlistName}:`, error);
       });
   }
-  
+
   res.status(200).json({ success: true });
 });
 
