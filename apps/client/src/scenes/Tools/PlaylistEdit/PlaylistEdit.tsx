@@ -27,7 +27,7 @@ export default function PlaylistEdit() {
 
   return (
     <div>
-      <Header title="Playlists edit" subtitle="Remove liked songs from a playlist" />
+      <Header hideInterval title="Playlists edit" subtitle="Remove liked songs from a playlist" />
       <div className={s.content}>
         <FormControl fullWidth>
           <InputLabel id="playlist">Select a playlist</InputLabel>

@@ -91,7 +91,7 @@ export default function PlaylistBackup() {
 
   return (
     <div>
-      <Header title="Playlist backup" subtitle="Manage playlist backups" />
+      <Header hideInterval title="Playlist backup" subtitle="Manage playlist backups" />
       <div className={s.content}>
         <div className={s.section}>
           <Text element="h2">Toggle playlist backup</Text>
