@@ -94,7 +94,7 @@ export default function PlaylistBackup() {
       <Header title="Playlist backup" subtitle="Manage playlist backups" />
       <div className={s.content}>
         <div className={s.section}>
-          <Text element="h2">Start a backup</Text>
+          <Text element="h2">Toggle playlist backup</Text>
           <div className={s.row}>
             <Autocomplete
               fullWidth
@@ -108,15 +108,15 @@ export default function PlaylistBackup() {
               <Button variant="contained" onClick={() => toggle(selected)}>
                 {
                   subscriptions.find(s => s.playlistId === selected.id)?.active
-                    ? `Disable ${selected.name}`
-                    : `Enable ${selected.name}`
+                    ? `Disable`
+                    : `Enable`
                 }
               </Button>
             )}
           </div>
         </div>
         <div className={s.section}>
-          <Text element="h2">Current backups</Text>
+          <Text element="h2">Restore backup</Text>
           <div className={s.row}>
             <FormControl fullWidth>
               <InputLabel id="managed-playlist">Playlist</InputLabel>
@@ -146,7 +146,7 @@ export default function PlaylistBackup() {
                   toggle({ id: manageId, name: subscriptions.find(s => s.playlistId === manageId)?.playlistName || '' } as Playlist)
                 }
               >
-                Disable Backup
+                Disable
               </Button>
             )}
           </div>
