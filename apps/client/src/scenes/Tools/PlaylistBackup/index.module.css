@@ -30,3 +30,10 @@
 .table tbody tr:nth-child(even) {
   background-color: var(--content-background);
 }
+
+@media screen and (min-width: 600px) {
+  .actions {
+    flex-direction: row;
+    align-items: center;
+  }
+}

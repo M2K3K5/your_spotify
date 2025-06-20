@@ -31,6 +31,17 @@ interface Subscription {
 export default function PlaylistBackup() {
   const user = useSelector(selectUser);
   const playlists = useAPI(api.getPlaylists);
+  const playlistsWithLiked = useMemo(() => {
+    if (!playlists || !user) return playlists;
+    const liked: Playlist = {
+      id: 'liked',
+      name: 'Liked Songs',
+      owner: { id: user.id },
+      images: [],
+      tracks: { total: 0, items: [] },
+    };
+    return [liked, ...playlists];
+  }, [playlists, user]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [selected, setSelected] = useState<Playlist | null>(null);
   const [versionsMap, setVersionsMap] = useState<Record<string, { id: string; date: string; count: number }[]>>({});
@@ -78,7 +89,7 @@ export default function PlaylistBackup() {
     [subscriptions, refreshSubscriptions],
   );
 
-  const filtered = playlists ?? [];
+  const filtered = playlistsWithLiked ?? [];
 
   if (!user) return null;
 
