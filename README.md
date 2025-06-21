@@ -85,8 +85,8 @@ You can follow the instructions [here](https://github.com/Yooooomi/your_spotify/
 
 | Key | Default value (if any) | Description |
 | :--- | :--- | :--- |
-| CLIENT_ENDPOINT       | REQUIRED | The endpoint of your web application |
-| API_ENDPOINT          | REQUIRED | The endpoint of your server |
+| CLIENT_ENDPOINT       | REQUIRED | The endpoint of your web application. Can include a path prefix like `https://x.com/music` |
+| API_ENDPOINT          | REQUIRED | The endpoint of your server. Can include a path prefix like `https://x.com/music/api` |
 | SPOTIFY_PUBLIC        | REQUIRED | The public key of your Spotify application (cf [Creating the Spotify Application](#creating-the-spotify-application)) |
 | SPOTIFY_SECRET        | REQUIRED | The secret key of your Spotify application (cf [Creating the Spotify Application](#creating-the-spotify-application)) |
 | TIMEZONE              | Europe/Paris | The timezone of your stats, only affects read requests since data is saved with UTC time |
