@@ -440,7 +440,7 @@ export class SpotifyAPI {
       if (changes.length > 0) {
         await createPlaylistBackup(user._id.toString(), playlistId, changes);
       }
-      await deleteOldPlaylistBackups(user._id.toString(), playlistId, 2);
+      await deleteOldPlaylistBackups(user._id.toString(), playlistId, 30);
     } catch (e) {
       logger.error(e);
     }
