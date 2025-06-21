@@ -20,6 +20,8 @@ import { measureRequestDuration } from "./tools/middleware";
 import { ErrorTypeToHTTPCode, YourSpotifyError } from "./tools/errors/error";
 
 const app = express();
+const apiPrefix = new URL(get("API_ENDPOINT")).pathname.replace(/\/?$/, "");
+const router = express.Router();
 const ALLOW_ALL_CORS =
   "i-want-a-security-vulnerability-and-want-to-allow-all-origins";
 
@@ -59,25 +61,25 @@ app.use((_, res, next) => {
 });
 
 if (LogLevelAccepts("info")) {
-  app.use(morgan("dev"));
+  router.use(morgan("dev"));
 }
-app.use(cookieParser());
-app.use("/static", express.static(path.join(__dirname, "public")));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+router.use(cookieParser());
+router.use("/static", express.static(path.join(__dirname, "public")));
+router.use(express.urlencoded({ extended: true }));
+router.use(express.json());
 
-app.use("/", indexRouter);
-app.use("/oauth", oauthRouter);
-app.use("/spotify", spotifyRouter);
-app.use("/global", globalRouter);
-app.use("/artist", artistRouter);
-app.use("/album", albumRouter);
-app.use("/track", trackRouter);
-app.use("/search", searchRouter);
-app.use("/", importRouter);
-app.use("/", metricsRouter);
+router.use("/", indexRouter);
+router.use("/oauth", oauthRouter);
+router.use("/spotify", spotifyRouter);
+router.use("/global", globalRouter);
+router.use("/artist", artistRouter);
+router.use("/album", albumRouter);
+router.use("/track", trackRouter);
+router.use("/search", searchRouter);
+router.use("/", importRouter);
+router.use("/", metricsRouter);
 
-app.use((error: any, req: any, res: any, next: any) => {
+router.use((error: any, req: any, res: any, next: any) => {
   if (!error) {
     return next();
   }
@@ -87,5 +89,7 @@ app.use((error: any, req: any, res: any, next: any) => {
   }
   return res.status(500).send(error);
 });
+
+app.use(apiPrefix || "/", router);
 
 export { app };

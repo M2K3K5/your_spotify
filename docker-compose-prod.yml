@@ -41,3 +41,4 @@ services:
     environment:
       NODE_ENV: production
       API_ENDPOINT: http://localhost:8080
+      CLIENT_ENDPOINT: http://localhost:3000

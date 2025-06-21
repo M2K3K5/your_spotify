@@ -1,1 +1,2 @@
-window.API_ENDPOINT = 'https://api-music.lueders.dev';
+window.API_ENDPOINT = '__API_ENDPOINT__';
+window.CLIENT_BASENAME = '__CLIENT_BASENAME__';
