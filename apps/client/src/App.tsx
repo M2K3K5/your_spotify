@@ -50,7 +50,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <div className="app">
-        <BrowserRouter>
+        <BrowserRouter basename={(window as any).CLIENT_BASENAME ?? "/"}>
           <Wrapper />
           <Message />
           <PlaylistDialog />

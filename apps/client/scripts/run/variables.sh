@@ -21,6 +21,19 @@ fi
 echo "Setting API Endpoint to '$API_ENDPOINT'"
 sed -i "s;__API_ENDPOINT__;$API_ENDPOINT;g" "$VAR_PATH/variables.js"
 
+if [[ -z "$CLIENT_ENDPOINT" ]]
+then
+    CLIENT_BASENAME="/"
+else
+    CLIENT_BASENAME=$(echo "$CLIENT_ENDPOINT" | sed -E 's#^[^:]+://[^/]+##')
+    if [[ -z "$CLIENT_BASENAME" ]]; then
+        CLIENT_BASENAME="/"
+    fi
+fi
+
+echo "Setting Client basename to '$CLIENT_BASENAME'"
+sed -i "s;__CLIENT_BASENAME__;$CLIENT_BASENAME;g" "$VAR_PATH/variables.js"
+
 # Editing meta image urls
 sed -i "s;image\" content=\"\(.[^\"]*\);image\" content=\"$API_ENDPOINT/static/your_spotify_1200.png;g" "$VAR_PATH/index.html"
 
