@@ -1,4 +1,12 @@
-import { Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import {
+  Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Autocomplete,
+  TextField,
+} from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import Header from '../../../components/Header';
@@ -15,13 +23,18 @@ export default function PlaylistEdit() {
   const user = useSelector(selectUser);
   const playlists = useAPI(api.getPlaylists);
   const [selected, setSelected] = useState('');
+  const [first, setFirst] = useState<Playlist | null>(null);
+  const [second, setSecond] = useState<Playlist | null>(null);
   const [success, setSuccess] = useState<boolean | null>(null);
   const [diff, setDiff] = useState<{
-    onlyInPlaylist: Track[];
-    onlyInLiked: Track[];
+    onlyInFirst: Track[];
+    onlyInSecond: Track[];
   } | null>(null);
   const [loadingCompare, setLoadingCompare] = useState(false);
   const [compareId, setCompareId] = useState<string | null>(null);
+
+  const likedOption = { id: 'liked', name: 'Liked songs' } as unknown as Playlist;
+  const playlistOptions = (playlists ?? []).concat(likedOption);
 
   const remove = useCallback(async () => {
     if (!selected) return;
@@ -30,17 +43,17 @@ export default function PlaylistEdit() {
   }, [selected]);
 
   const compare = useCallback(async () => {
-    if (!selected) return;
+    if (!first || !second) return;
     setDiff(null);
     setLoadingCompare(true);
-    const { data } = await api.startComparePlaylistWithLiked(selected);
+    const { data } = await api.startComparePlaylists(first.id, second.id);
     setCompareId(data.id);
-  }, [selected]);
+  }, [first, second]);
 
   useEffect(() => {
     if (!compareId) return;
     const interval = setInterval(async () => {
-      const { data } = await api.getComparePlaylistWithLikedStatus(compareId);
+      const { data } = await api.getComparePlaylistsStatus(compareId);
       if (data.status === 'done') {
         setDiff(data.result ?? null);
         setLoadingCompare(false);
@@ -80,39 +93,65 @@ export default function PlaylistEdit() {
         <Button variant="contained" disabled={!selected} onClick={remove}>
           Remove liked songs
         </Button>
-        <Button
-          variant="contained"
-          disabled={!selected || loadingCompare}
-          onClick={compare}
-        >
-          Compare with liked songs
-        </Button>
+        <div className={s.compareInputs}>
+          <Autocomplete
+            fullWidth
+            options={playlistOptions}
+            getOptionLabel={(pl: Playlist) => pl.name}
+            value={first}
+            onChange={(ev, val) => setFirst(val)}
+            renderInput={params => <TextField {...params} label="First playlist" />}
+            filterOptions={(options) =>
+              options.filter(o => !second || o.id !== second.id)
+            }
+          />
+          <Autocomplete
+            fullWidth
+            options={playlistOptions}
+            getOptionLabel={(pl: Playlist) => pl.name}
+            value={second}
+            onChange={(ev, val) => setSecond(val)}
+            renderInput={params => <TextField {...params} label="Second playlist" />}
+            filterOptions={(options) =>
+              options.filter(o => !first || o.id !== first.id)
+            }
+          />
+          <Button
+            variant="contained"
+            disabled={!first || !second || loadingCompare}
+            onClick={compare}
+          >
+            Compare playlists
+          </Button>
+        </div>
         {loadingCompare && <Text element="div">Comparing...</Text>}
         {success !== null && (
           <Text element="div">Success: {success.toString()}</Text>
         )}
-        {diff && (
-          <div className={s.differences}>
-            <div>
-              <Text element="h3">Only in playlist</Text>
-              <ul className={s.list}>
-                {diff.onlyInPlaylist.map(track => (
-                  <li key={track.id}>
-                    <InlineTrack track={track} />
-                  </li>
+        {diff && first && second && (
+          <div className={s.tableContainer}>
+            <table className={s.table}>
+              <thead>
+                <tr>
+                  <th>Only in {first.name}</th>
+                  <th>Only in {second.name}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({
+                  length: Math.max(diff.onlyInFirst.length, diff.onlyInSecond.length),
+                }).map((_, idx) => (
+                  <tr key={idx}>
+                    <td>
+                      {diff.onlyInFirst[idx] && <InlineTrack track={diff.onlyInFirst[idx]} />}
+                    </td>
+                    <td>
+                      {diff.onlyInSecond[idx] && <InlineTrack track={diff.onlyInSecond[idx]} />}
+                    </td>
+                  </tr>
                 ))}
-              </ul>
-            </div>
-            <div>
-              <Text element="h3">Liked but not in playlist</Text>
-              <ul className={s.list}>
-                {diff.onlyInLiked.map(track => (
-                  <li key={track.id}>
-                    <InlineTrack track={track} />
-                  </li>
-                ))}
-              </ul>
-            </div>
+              </tbody>
+            </table>
           </div>
         )}
       </div>

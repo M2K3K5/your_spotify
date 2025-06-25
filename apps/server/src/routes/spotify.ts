@@ -49,11 +49,16 @@ import { v4 as uuidv4 } from "uuid";
 
 export const router = Router();
 
+interface CompareResult {
+  onlyInFirst: any[];
+  onlyInSecond: any[];
+}
+
 const compareJobs: Record<
   string,
   {
     status: "loading" | "done" | "error";
-    result?: { onlyInPlaylist: any[]; onlyInLiked: any[] };
+    result?: CompareResult;
   }
 > = {};
 
@@ -616,43 +621,50 @@ router.post("/playlist/remove-likedsongs", logged, withHttpClient, async (req, r
   });
 });
 
-const compareLikedSchema = z.object({
-  playlistId: z.string(),
+
+const comparePlaylistsSchema = z.object({
+  playlistIdA: z.string(),
+  playlistIdB: z.string(),
 });
 
-const compareLikedStatusSchema = z.object({
+const comparePlaylistsStatusSchema = z.object({
   id: z.string(),
 });
 
 router.post(
-  "/playlist/compare-likedsongs/start",
+  "/playlist/compare/start",
   logged,
   withHttpClient,
   async (req, res) => {
     const { client } = req as LoggedRequest & SpotifyRequest;
-    const { playlistId } = validate(req.body, compareLikedSchema);
+    const { playlistIdA, playlistIdB } = validate(req.body, comparePlaylistsSchema);
 
     const id = uuidv4();
     compareJobs[id] = { status: "loading" };
 
     (async () => {
+      const getTracks = async (plId: string) => {
+        if (plId === "liked") {
+          const liked = await client.getUsersSavedTracks();
+          return liked.map(t => t.track);
+        }
+        const tracks = await client.getPlaylistTracks(plId);
+        return tracks.map(t => t.track);
+      };
+
       try {
-        const playlistTracks = await client.getPlaylistTracks(playlistId);
-        const likedTracks = await client.getUsersSavedTracks();
+        const tracksA = await getTracks(playlistIdA);
+        const tracksB = await getTracks(playlistIdB);
 
-        const likedSet = new Set(likedTracks.map(t => t.track.id));
-        const playlistSet = new Set(playlistTracks.map(t => t.track.id));
+        const setA = new Set(tracksA.map(t => t.id));
+        const setB = new Set(tracksB.map(t => t.id));
 
-        const onlyInPlaylist = playlistTracks
-          .filter(t => !likedSet.has(t.track.id))
-          .map(t => t.track);
-        const onlyInLiked = likedTracks
-          .filter(t => !playlistSet.has(t.track.id))
-          .map(t => t.track);
+        const onlyInA = tracksA.filter(t => !setB.has(t.id));
+        const onlyInB = tracksB.filter(t => !setA.has(t.id));
 
         compareJobs[id] = {
           status: "done",
-          result: { onlyInPlaylist, onlyInLiked },
+          result: { onlyInFirst: onlyInA, onlyInSecond: onlyInB },
         };
       } catch (e) {
         logger.error(e);
@@ -668,10 +680,10 @@ router.post(
 );
 
 router.get(
-  "/playlist/compare-likedsongs/status",
+  "/playlist/compare/status",
   logged,
   async (req, res) => {
-    const { id } = validate(req.query, compareLikedStatusSchema);
+    const { id } = validate(req.query, comparePlaylistsStatusSchema);
     const job = compareJobs[id];
     if (!job) {
       res.status(404).end();
