@@ -607,6 +607,35 @@ router.post("/playlist/remove-likedsongs", logged, withHttpClient, async (req, r
   });
 });
 
+const compareLikedSchema = z.object({
+  playlistId: z.string(),
+});
+
+router.get(
+  "/playlist/compare-likedsongs",
+  logged,
+  withHttpClient,
+  async (req, res) => {
+    const { client } = req as LoggedRequest & SpotifyRequest;
+    const { playlistId } = validate(req.query, compareLikedSchema);
+
+    const playlistTracks = await client.getPlaylistTracks(playlistId);
+    const likedTracks = await client.getUsersSavedTracks();
+
+    const likedSet = new Set(likedTracks.map(t => t.track.id));
+    const playlistSet = new Set(playlistTracks.map(t => t.track.id));
+
+    const onlyInPlaylist = playlistTracks
+      .filter(t => !likedSet.has(t.track.id))
+      .map(t => t.track);
+    const onlyInLiked = likedTracks
+      .filter(t => !playlistSet.has(t.track.id))
+      .map(t => t.track);
+
+    res.status(200).send({ onlyInPlaylist, onlyInLiked });
+  },
+);
+
 
 const playlistBackupSubscriptionSchema = z.object({
   playlistId: z.string(),

@@ -3,6 +3,8 @@ import { useCallback, useState } from 'react';
 import { useSelector } from 'react-redux';
 import Header from '../../../components/Header';
 import Text from '../../../components/Text';
+import InlineTrack from '../../../components/InlineTrack';
+import { Track } from '../../../services/types';
 import { api } from '../../../services/apis/api';
 import { useAPI } from '../../../services/hooks/hooks';
 import { selectUser } from '../../../services/redux/modules/user/selector';
@@ -14,11 +16,21 @@ export default function PlaylistEdit() {
   const playlists = useAPI(api.getPlaylists);
   const [selected, setSelected] = useState('');
   const [success, setSuccess] = useState<boolean | null>(null);
+  const [diff, setDiff] = useState<{
+    onlyInPlaylist: Track[];
+    onlyInLiked: Track[];
+  } | null>(null);
 
   const remove = useCallback(async () => {
     if (!selected) return;
     const { data } = await api.removeLikedSongsFromPlaylist(selected);
     setSuccess(data.success);
+  }, [selected]);
+
+  const compare = useCallback(async () => {
+    if (!selected) return;
+    const { data } = await api.comparePlaylistWithLiked(selected);
+    setDiff(data);
   }, [selected]);
 
   if (!user) {
@@ -46,8 +58,35 @@ export default function PlaylistEdit() {
         <Button variant="contained" disabled={!selected} onClick={remove}>
           Remove liked songs
         </Button>
+        <Button variant="contained" disabled={!selected} onClick={compare}>
+          Compare with liked songs
+        </Button>
         {success !== null && (
           <Text element="div">Success: {success.toString()}</Text>
+        )}
+        {diff && (
+          <div className={s.differences}>
+            <div>
+              <Text element="h3">Only in playlist</Text>
+              <ul className={s.list}>
+                {diff.onlyInPlaylist.map(track => (
+                  <li key={track.id}>
+                    <InlineTrack track={track} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <Text element="h3">Liked but not in playlist</Text>
+              <ul className={s.list}>
+                {diff.onlyInLiked.map(track => (
+                  <li key={track.id}>
+                    <InlineTrack track={track} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         )}
       </div>
     </div>
