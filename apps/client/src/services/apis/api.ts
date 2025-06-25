@@ -536,18 +536,6 @@ export const api = {
   ) => post("/spotify/playlist/create", { playlistId: id, name, ...context }),
   removeLikedSongsFromPlaylist: (playlistId: string) =>
     post<{ success: boolean }>("/spotify/playlist/remove-likedsongs", { playlistId }),
-  startComparePlaylistWithLiked: (playlistId: string) =>
-    post<{ id: string }>("/spotify/playlist/compare-likedsongs/start", { playlistId }),
-  getComparePlaylistWithLikedStatus: (id: string) =>
-    get<{ status: string; result?: { onlyInFirst: Track[]; onlyInSecond: Track[] } }>(
-      "/spotify/playlist/compare-likedsongs/status",
-      { id },
-    ),
-  comparePlaylistWithLiked: (playlistId: string) =>
-    get<{ onlyInFirst: Track[]; onlyInSecond: Track[] }>(
-      "/spotify/playlist/compare-likedsongs",
-      { playlistId },
-    ),
   startComparePlaylists: (first: string, second: string) =>
     post<{ id: string }>("/spotify/playlist/compare/start", {
       playlistIdA: first,

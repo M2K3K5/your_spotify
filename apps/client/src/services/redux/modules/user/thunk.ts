@@ -243,34 +243,6 @@ export const removeLikedSongs = myAsyncThunk<boolean, string>(
   },
 );
 
-export const comparePlaylistWithLiked = myAsyncThunk<
-  { onlyInFirst: Track[]; onlyInSecond: Track[] } | null,
-  string
->("@user/compare-likedsongs", async (playlistId, tapi) => {
-  try {
-    const start = await api.startComparePlaylistWithLiked(playlistId);
-    const id = start.data.id;
-    let status;
-    do {
-      await new Promise(res => setTimeout(res, 2000));
-      status = await api.getComparePlaylistWithLikedStatus(id);
-    } while (status.data.status === "loading");
-    await tapi.dispatch(checkLogged());
-    if (status.data.status === "done" && status.data.result) {
-      return status.data.result;
-    }
-    return null;
-  } catch (e) {
-    console.error(e);
-    tapi.dispatch(
-      alertMessage({
-        level: "error",
-        message: "Could not compare playlist with liked songs",
-      }),
-    );
-    return null;
-  }
-});
 
 export const comparePlaylists = myAsyncThunk<
   { onlyInFirst: Track[]; onlyInSecond: Track[] } | null,
