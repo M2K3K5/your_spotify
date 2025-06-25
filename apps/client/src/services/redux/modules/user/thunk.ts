@@ -4,6 +4,7 @@ import { myAsyncThunk } from "../../tools";
 import { alertMessage } from "../message/reducer";
 import { selectIsPublic } from "./selector";
 import { DarkModeType, SyncLikedSongsResponse, SyncLikedSongsStatusResponse, User } from "./types";
+import { Track } from "../../../types";
 
 export const checkLogged = myAsyncThunk<User | null, void>(
   "@user/checklogged",
@@ -241,3 +242,32 @@ export const removeLikedSongs = myAsyncThunk<boolean, string>(
     }
   },
 );
+
+export const comparePlaylistWithLiked = myAsyncThunk<
+  { onlyInPlaylist: Track[]; onlyInLiked: Track[] } | null,
+  string
+>("@user/compare-likedsongs", async (playlistId, tapi) => {
+  try {
+    const start = await api.startComparePlaylistWithLiked(playlistId);
+    const id = start.data.id;
+    let status;
+    do {
+      await new Promise(res => setTimeout(res, 2000));
+      status = await api.getComparePlaylistWithLikedStatus(id);
+    } while (status.data.status === "loading");
+    await tapi.dispatch(checkLogged());
+    if (status.data.status === "done" && status.data.result) {
+      return status.data.result;
+    }
+    return null;
+  } catch (e) {
+    console.error(e);
+    tapi.dispatch(
+      alertMessage({
+        level: "error",
+        message: "Could not compare playlist with liked songs",
+      }),
+    );
+    return null;
+  }
+});

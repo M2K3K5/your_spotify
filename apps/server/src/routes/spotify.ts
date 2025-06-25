@@ -45,8 +45,17 @@ import {
   getBackupsUntil as getPlaylistBackupsUntil,
 } from "../database/queries/playlistBackup";
 import { SpotifyAPI } from "../tools/apis/spotifyApi";
+import { v4 as uuidv4 } from "uuid";
 
 export const router = Router();
+
+const compareJobs: Record<
+  string,
+  {
+    status: "loading" | "done" | "error";
+    result?: { onlyInPlaylist: any[]; onlyInLiked: any[] };
+  }
+> = {};
 
 const playSchema = z.object({
   id: z.string(),
@@ -606,6 +615,71 @@ router.post("/playlist/remove-likedsongs", logged, withHttpClient, async (req, r
     success: true
   });
 });
+
+const compareLikedSchema = z.object({
+  playlistId: z.string(),
+});
+
+const compareLikedStatusSchema = z.object({
+  id: z.string(),
+});
+
+router.post(
+  "/playlist/compare-likedsongs/start",
+  logged,
+  withHttpClient,
+  async (req, res) => {
+    const { client } = req as LoggedRequest & SpotifyRequest;
+    const { playlistId } = validate(req.body, compareLikedSchema);
+
+    const id = uuidv4();
+    compareJobs[id] = { status: "loading" };
+
+    (async () => {
+      try {
+        const playlistTracks = await client.getPlaylistTracks(playlistId);
+        const likedTracks = await client.getUsersSavedTracks();
+
+        const likedSet = new Set(likedTracks.map(t => t.track.id));
+        const playlistSet = new Set(playlistTracks.map(t => t.track.id));
+
+        const onlyInPlaylist = playlistTracks
+          .filter(t => !likedSet.has(t.track.id))
+          .map(t => t.track);
+        const onlyInLiked = likedTracks
+          .filter(t => !playlistSet.has(t.track.id))
+          .map(t => t.track);
+
+        compareJobs[id] = {
+          status: "done",
+          result: { onlyInPlaylist, onlyInLiked },
+        };
+      } catch (e) {
+        logger.error(e);
+        compareJobs[id] = { status: "error" };
+      }
+      setTimeout(() => {
+        delete compareJobs[id];
+      }, 1000 * 60 * 5);
+    })().catch(logger.error);
+
+    res.status(202).send({ id });
+  },
+);
+
+router.get(
+  "/playlist/compare-likedsongs/status",
+  logged,
+  async (req, res) => {
+    const { id } = validate(req.query, compareLikedStatusSchema);
+    const job = compareJobs[id];
+    if (!job) {
+      res.status(404).end();
+      return;
+    }
+    res.status(200).send(job);
+  },
+);
 
 
 const playlistBackupSubscriptionSchema = z.object({
