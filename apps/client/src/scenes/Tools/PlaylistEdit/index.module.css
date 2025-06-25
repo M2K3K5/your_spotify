@@ -6,19 +6,30 @@
   max-width: 400px;
 }
 
-.differences {
-  display: grid;
+.compareInputs {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
 @media (min-width: 600px) {
-  .differences {
-    grid-template-columns: 1fr 1fr;
+  .compareInputs {
+    flex-direction: row;
+    align-items: center;
   }
 }
 
-.list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.tableContainer {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
 }
