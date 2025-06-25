@@ -248,9 +248,18 @@ export const comparePlaylistWithLiked = myAsyncThunk<
   string
 >("@user/compare-likedsongs", async (playlistId, tapi) => {
   try {
-    const resp = await api.comparePlaylistWithLiked(playlistId);
+    const start = await api.startComparePlaylistWithLiked(playlistId);
+    const id = start.data.id;
+    let status;
+    do {
+      await new Promise(res => setTimeout(res, 2000));
+      status = await api.getComparePlaylistWithLikedStatus(id);
+    } while (status.data.status === "loading");
     await tapi.dispatch(checkLogged());
-    return resp.data;
+    if (status.data.status === "done" && status.data.result) {
+      return status.data.result;
+    }
+    return null;
   } catch (e) {
     console.error(e);
     tapi.dispatch(

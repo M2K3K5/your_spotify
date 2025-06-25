@@ -1,5 +1,5 @@
 import { Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import Header from '../../../components/Header';
 import Text from '../../../components/Text';
@@ -20,6 +20,8 @@ export default function PlaylistEdit() {
     onlyInPlaylist: Track[];
     onlyInLiked: Track[];
   } | null>(null);
+  const [loadingCompare, setLoadingCompare] = useState(false);
+  const [compareId, setCompareId] = useState<string | null>(null);
 
   const remove = useCallback(async () => {
     if (!selected) return;
@@ -29,9 +31,29 @@ export default function PlaylistEdit() {
 
   const compare = useCallback(async () => {
     if (!selected) return;
-    const { data } = await api.comparePlaylistWithLiked(selected);
-    setDiff(data);
+    setDiff(null);
+    setLoadingCompare(true);
+    const { data } = await api.startComparePlaylistWithLiked(selected);
+    setCompareId(data.id);
   }, [selected]);
+
+  useEffect(() => {
+    if (!compareId) return;
+    const interval = setInterval(async () => {
+      const { data } = await api.getComparePlaylistWithLikedStatus(compareId);
+      if (data.status === 'done') {
+        setDiff(data.result ?? null);
+        setLoadingCompare(false);
+        setCompareId(null);
+        clearInterval(interval);
+      } else if (data.status === 'error') {
+        setLoadingCompare(false);
+        setCompareId(null);
+        clearInterval(interval);
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [compareId]);
 
   if (!user) {
     return null;
@@ -58,9 +80,14 @@ export default function PlaylistEdit() {
         <Button variant="contained" disabled={!selected} onClick={remove}>
           Remove liked songs
         </Button>
-        <Button variant="contained" disabled={!selected} onClick={compare}>
+        <Button
+          variant="contained"
+          disabled={!selected || loadingCompare}
+          onClick={compare}
+        >
           Compare with liked songs
         </Button>
+        {loadingCompare && <Text element="div">Comparing...</Text>}
         {success !== null && (
           <Text element="div">Success: {success.toString()}</Text>
         )}
