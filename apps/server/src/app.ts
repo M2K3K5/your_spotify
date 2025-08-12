@@ -18,10 +18,9 @@ import { get } from "./tools/env";
 import { logger, LogLevelAccepts } from "./tools/logger";
 import { measureRequestDuration } from "./tools/middleware";
 import { ErrorTypeToHTTPCode, YourSpotifyError } from "./tools/errors/error";
+import { IncomingMessage } from "http";
 
 const app = express();
-const apiPrefix = new URL(get("API_ENDPOINT")).pathname.replace(/\/?$/, "");
-const router = express.Router();
 const ALLOW_ALL_CORS =
   "i-want-a-security-vulnerability-and-want-to-allow-all-origins";
 
@@ -31,6 +30,27 @@ let corsValue: string[] | undefined = get("CORS")?.split(",") ?? [
 if (corsValue?.[0] === ALLOW_ALL_CORS) {
   corsValue = undefined;
 }
+
+// Mask certain query params in logs
+const maskedSearchParams: Record<string, Set<string>> = {
+  "/oauth/spotify/callback": new Set(["code"]),
+};
+
+morgan.token<IncomingMessage & { originalUrl?: string }>("url", req => {
+  try {
+    const url = new URL(req.originalUrl ?? req.url!, "http://localhost");
+
+    for (const param of url.searchParams.keys()) {
+      if (maskedSearchParams[url.pathname]?.has(param)) {
+        url.searchParams.set(param, 'MASKED');
+      }
+    }
+    return url.pathname +
+      (url.searchParams.size > 0 ? "?" + url.searchParams.toString() : "")
+  } catch (error) {
+    return req.originalUrl ?? req.url;
+  }
+});
 
 app.use(measureRequestDuration);
 
@@ -61,25 +81,25 @@ app.use((_, res, next) => {
 });
 
 if (LogLevelAccepts("info")) {
-  router.use(morgan("dev"));
+  app.use(morgan("dev"));
 }
-router.use(cookieParser());
-router.use("/static", express.static(path.join(__dirname, "public")));
-router.use(express.urlencoded({ extended: true }));
-router.use(express.json());
+app.use(cookieParser());
+app.use("/static", express.static(path.join(__dirname, "public")));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-router.use("/", indexRouter);
-router.use("/oauth", oauthRouter);
-router.use("/spotify", spotifyRouter);
-router.use("/global", globalRouter);
-router.use("/artist", artistRouter);
-router.use("/album", albumRouter);
-router.use("/track", trackRouter);
-router.use("/search", searchRouter);
-router.use("/", importRouter);
-router.use("/", metricsRouter);
+app.use("/", indexRouter);
+app.use("/oauth", oauthRouter);
+app.use("/spotify", spotifyRouter);
+app.use("/global", globalRouter);
+app.use("/artist", artistRouter);
+app.use("/album", albumRouter);
+app.use("/track", trackRouter);
+app.use("/search", searchRouter);
+app.use("/", importRouter);
+app.use("/", metricsRouter);
 
-router.use((error: any, req: any, res: any, next: any) => {
+app.use((error: any, req: any, res: any, next: any) => {
   if (!error) {
     return next();
   }
@@ -89,7 +109,5 @@ router.use((error: any, req: any, res: any, next: any) => {
   }
   return res.status(500).send(error);
 });
-
-app.use(apiPrefix || "/", router);
 
 export { app };
